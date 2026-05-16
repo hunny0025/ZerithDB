@@ -1,8 +1,14 @@
 import { WebSocketServer, WebSocket } from "ws";
 import { createServer } from "http";
 
+// Configuration
 const PORT = parseInt(process.env["PORT"] ?? "4000", 10);
 const HOST = process.env["HOST"] ?? "0.0.0.0";
+
+// Connection pooling / idle timeout settings
+const IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes idle timeout
+// Tracks the last activity timestamp for each peerId
+const peerLastSeen = new Map<string, number>();
 
 // roomId → Set of { peerId, ws }
 const rooms = new Map<string, Set<{ peerId: string; ws: WebSocket }>>();
@@ -43,10 +49,15 @@ wss.on("connection", (ws, req) => {
   const peerEntry = { peerId, ws };
   room.add(peerEntry);
 
+  // Record initial activity timestamp
+  peerLastSeen.set(peerId, Date.now());
+
   console.log(`[+] peer=${peerId} joined room=${roomId} (room size: ${room.size})`);
 
   // Send the new peer the list of existing peers
-  const existingPeerIds = [...room].filter((p) => p.peerId !== peerId).map((p) => p.peerId);
+  const existingPeerIds = [...room]
+    .filter((p) => p.peerId !== peerId)
+    .map((p) => p.peerId);
 
   ws.send(JSON.stringify({ type: "peer-list", from: "server", payload: existingPeerIds }));
 
@@ -58,6 +69,9 @@ wss.on("connection", (ws, req) => {
     } catch {
       return; // Ignore malformed messages
     }
+
+    // Update activity timestamp for this peer
+    peerLastSeen.set(peerId, Date.now());
 
     // Stamp the sender
     msg.from = peerId;
@@ -81,7 +95,9 @@ wss.on("connection", (ws, req) => {
   });
 
   ws.on("close", () => {
+    // Cleanup on close
     room.delete(peerEntry);
+    peerLastSeen.delete(peerId);
     console.log(`[-] peer=${peerId} left room=${roomId} (room size: ${room.size})`);
 
     // Clean up empty rooms
@@ -103,6 +119,29 @@ wss.on("connection", (ws, req) => {
     room.delete(peerEntry);
   });
 });
+
+// Periodic cleanup of idle connections (basic connection pooling)
+setInterval(() => {
+  const now = Date.now();
+  for (const [roomId, room] of rooms.entries()) {
+    for (const peer of Array.from(room)) {
+      const lastSeen = peerLastSeen.get(peer.peerId) ?? 0;
+      if (now - lastSeen > IDLE_TIMEOUT_MS) {
+        // Force close idle connection
+        try {
+          peer.ws.close(1000, "Idle timeout");
+        } catch {}
+        room.delete(peer);
+        peerLastSeen.delete(peer.peerId);
+        console.log(`[*] Closed idle peer=${peer.peerId} from room=${roomId}`);
+      }
+    }
+    // Remove empty rooms after cleanup
+    if (room.size === 0) {
+      rooms.delete(roomId);
+    }
+  }
+}, 60_000); // run every minute
 
 server.listen(PORT, HOST, () => {
   console.log(`🚀 ZerithDB Signaling Server running at ws://${HOST}:${PORT}`);
