@@ -19,6 +19,9 @@ type SyncEvents = {
 export class SyncEngine extends EventEmitter<SyncEvents> {
   private readonly docs = new Map<string, Y.Doc>();
   private readonly persistences = new Map<string, IndexeddbPersistence>();
+  // Retain a reference to each doc's update listener so it can be explicitly
+  // removed before doc.destroy() — prevents closure retention in long sessions.
+  private readonly docUpdateListeners = new Map<string, (update: Uint8Array, origin: unknown) => void>();
   private _enabled = false;
   private _state: SyncState = { synced: false, pendingUpdates: 0, connectedPeers: 0 };
 
@@ -73,8 +76,8 @@ export class SyncEngine extends EventEmitter<SyncEvents> {
     );
     this.persistences.set(collectionName, persistence);
 
-    // Broadcast local updates to peers
-    doc.on("update", (update: Uint8Array, origin: unknown) => {
+    // Store listener reference so it can be explicitly removed on dispose or unloadDoc
+    const updateListener = (update: Uint8Array, origin: unknown) => {
       if (origin === "remote") return; // Don't echo back remote updates
       if (!this._enabled) return;
 
@@ -83,10 +86,38 @@ export class SyncEngine extends EventEmitter<SyncEvents> {
         type: "sync-update",
         payload: this.encodeMessage(collectionName, update),
       });
-    });
+    };
+    doc.on("update", updateListener);
+    this.docUpdateListeners.set(collectionName, updateListener);
 
     this.docs.set(collectionName, doc);
     return doc;
+  }
+
+  /**
+   * Unload a specific collection's document from memory.
+   * Removes the update listener, destroys the persistence layer,
+   * and destroys the Yjs document — freeing all associated memory.
+   */
+  async unloadDoc(collectionName: string): Promise<void> {
+    const listener = this.docUpdateListeners.get(collectionName);
+    const doc = this.docs.get(collectionName);
+    const persistence = this.persistences.get(collectionName);
+
+    if (listener && doc) {
+      doc.off("update", listener);
+    }
+    this.docUpdateListeners.delete(collectionName);
+
+    if (persistence) {
+      await persistence.destroy();
+      this.persistences.delete(collectionName);
+    }
+
+    if (doc) {
+      doc.destroy();
+      this.docs.delete(collectionName);
+    }
   }
 
   /**
@@ -101,6 +132,13 @@ export class SyncEngine extends EventEmitter<SyncEvents> {
 
   async dispose(): Promise<void> {
     this.disable();
+    // Explicitly remove all doc update listeners before destroying documents.
+    // This ensures closures are released even if yjs defers internal cleanup.
+    for (const [collectionName, listener] of this.docUpdateListeners) {
+      const doc = this.docs.get(collectionName);
+      doc?.off("update", listener);
+    }
+    this.docUpdateListeners.clear();
     for (const [, persistence] of this.persistences) {
       await persistence.destroy();
     }

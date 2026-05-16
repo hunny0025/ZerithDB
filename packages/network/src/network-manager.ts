@@ -45,6 +45,29 @@ export class NetworkManager extends EventEmitter<NetworkEvents> {
    * After connection, WebRTC handshakes happen automatically.
    */
   async connect(roomId: string): Promise<void> {
+    // Cancel any pending reconnect before starting a new connection attempt
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
+    // Tear down any existing WebSocket cleanly to prevent stale event handlers
+    // from triggering reconnect loops after the socket is replaced.
+    if (this.ws !== null) {
+      const stale = this.ws;
+      stale.onopen = null;
+      stale.onerror = null;
+      stale.onmessage = null;
+      stale.onclose = null;
+      if (
+        stale.readyState !== WebSocket.CLOSING &&
+        stale.readyState !== WebSocket.CLOSED
+      ) {
+        stale.close();
+      }
+      this.ws = null;
+    }
+
     const signalingUrl =
       this.config.sync?.signalingUrl ?? "wss://arpitkhandelwal810-zerith-signaling.hf.space";
     const url = `${signalingUrl}?room=${encodeURIComponent(roomId)}&peer=${this.localPeerId}`;
@@ -76,8 +99,13 @@ export class NetworkManager extends EventEmitter<NetworkEvents> {
         );
       };
 
+      // Wrap JSON.parse to prevent malformed messages from breaking the lifecycle
       this.ws.onmessage = (event: MessageEvent<string>) => {
-        this.handleSignalingMessage(JSON.parse(event.data) as SignalingMessage);
+        try {
+          this.handleSignalingMessage(JSON.parse(event.data) as SignalingMessage);
+        } catch {
+          // Ignore malformed signaling messages
+        }
       };
 
       this.ws.onclose = () => {
@@ -239,12 +267,21 @@ export class NetworkManager extends EventEmitter<NetworkEvents> {
   }
 
   private scheduleReconnect(roomId: string): void {
+    // Always cancel an existing timer before scheduling a new one.
+    // Without this, multiple onclose events (e.g., from stale sockets) could
+    // spawn parallel reconnect loops, compounding memory usage over time.
+    if (this.reconnectTimer !== null) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
+
     const delay = this.config.network?.reconnectDelay ?? 1000;
     const backoff = Math.min(delay * 2 ** this.reconnectAttempts, 30_000);
     const jitter = Math.random() * 1000;
 
     this.reconnectAttempts++;
     this.reconnectTimer = setTimeout(() => {
+      this.reconnectTimer = null;
       void this.connect(roomId);
     }, backoff + jitter);
   }
