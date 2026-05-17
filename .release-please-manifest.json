@@ -1,9 +1,10 @@
 {
-  "packages/sdk": "0.0.1",
-  "packages/db": "0.0.1",
-  "packages/sync": "0.0.1",
-  "packages/network": "0.0.1",
-  "packages/auth": "0.0.1",
-  "packages/core": "0.0.1",
-  "packages/cli": "0.0.1"
+  "packages/sdk": "0.1.0",
+  "packages/db": "0.1.0",
+  "packages/sync": "0.1.0",
+  "packages/network": "0.1.0",
+  "packages/auth": "0.1.0",
+  "packages/core": "0.1.0",
+  "packages/cli": "0.1.0",
+  "packages/audit": "1.0.0"
 }

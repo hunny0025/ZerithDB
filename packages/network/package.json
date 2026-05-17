@@ -1,6 +1,6 @@
 {
   "name": "zerithdb-network",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "description": "WebRTC peer-to-peer network layer for ZerithDB",
   "license": "Apache-2.0",
   "type": "module",

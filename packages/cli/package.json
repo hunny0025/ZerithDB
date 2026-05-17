@@ -1,6 +1,6 @@
 {
   "name": "zerithdb-cli",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "description": "ZerithDB CLI — npx zerithdb init",
   "license": "Apache-2.0",
   "type": "module",
@@ -30,11 +30,7 @@
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.57.0",
-
-
     "@types/node": "^22.0.0",
-    "@types/prompts": "^2.4.9",
-
     "rimraf": "^6.0.1",
     "tsup": "^8.2.4",
     "typescript": "^5.5.4",

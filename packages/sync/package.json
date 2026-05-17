@@ -1,6 +1,6 @@
 {
   "name": "zerithdb-sync",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "description": "CRDT-based sync engine for ZerithDB — powered by Yjs",
   "license": "Apache-2.0",
   "type": "module",
@@ -17,9 +17,8 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
-    "test": "vitest run --root ../.. --environment node packages/sync/src/ephemeral-state.test.ts",
-    "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit",
     "clean": "rimraf dist"
   },
   "dependencies": {

@@ -1,6 +1,6 @@
 {
   "name": "zerithdb-sdk",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "description": "ZerithDB SDK — build full-stack apps with zero backend",
   "keywords": [
     "local-first",
@@ -33,9 +33,8 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --treeshake",
     "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
-    "test": "vitest run --root ../.. --environment node packages/sdk/src/video-conference.test.ts",
-    "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests",
+    "typecheck": "tsc --noEmit",
     "clean": "rimraf dist"
   },
   "dependencies": {

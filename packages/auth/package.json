@@ -1,6 +1,6 @@
 {
   "name": "zerithdb-auth",
-  "version": "0.2.0",
+  "version": "0.1.0",
   "description": "Public/private key identity management for ZerithDB — no passwords",
   "license": "Apache-2.0",
   "type": "module",
