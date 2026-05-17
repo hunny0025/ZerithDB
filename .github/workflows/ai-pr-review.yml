@@ -1,0 +1,302 @@
+name: 🤖 AI Code Review & Labeler
+
+# Uses pull_request_target so it runs with repo secrets even for fork PRs.
+# We never checkout PR code here — only fetch the diff via API — so this is safe.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches: [main, dev]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: ai-review-${{ github.event.issue.number || github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  ai-review:
+    name: Groq AI Review & Label
+    runs-on: ubuntu-latest
+    # Run if it's an automated PR OR a comment starting with /review on a PR
+    if: ${{ github.event_name == 'pull_request_target' || (github.event_name == 'issue_comment' && github.event.issue.pull_request != null && startsWith(github.event.comment.body, '/review')) }}
+    steps:
+      - name: Fetch PR diff via GitHub API
+        run: |
+          PR_NUM="${{ github.event.issue.number || github.event.pull_request.number }}"
+          curl -s \
+            -H "Authorization: Bearer ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}" \
+            -H "Accept: application/vnd.github.v3.diff" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/${PR_NUM}" \
+            > pr.diff
+          echo "Diff size: $(wc -c < pr.diff) bytes, $(wc -l < pr.diff) lines"
+
+      - name: Generate AI review via Groq
+        id: generate
+        run: |
+          python3 << 'PYEOF'
+          import json, os, urllib.request, urllib.error, re, sys
+
+          # Read and truncate diff to fit context window
+          with open('pr.diff', 'r', errors='replace') as f:
+              diff = f.read()[:20000]
+
+          pr_title  = os.environ.get('PR_TITLE', '')
+          pr_body   = (os.environ.get('PR_BODY', '') or '')[:2000]
+          pr_author = os.environ.get('PR_AUTHOR', '')
+          pr_number = os.environ.get('PR_NUMBER', '')
+
+          prompt = f"""You are a senior software engineer performing a code review for ZerithDB — an open-source TypeScript monorepo that implements a distributed, in-browser database using WebRTC P2P networking, CRDTs for conflict resolution, and IndexedDB for persistence.
+
+          PR #{pr_number} by @{pr_author}
+          Title: {pr_title}
+          Description: {pr_body}
+
+          Diff:
+          ```diff
+          {diff}
+          ```
+
+          Review this PR thoroughly. Focus on:
+          - Correctness and logic errors
+          - TypeScript type safety
+          - Performance implications (especially in hot paths like find(), sync, CRDT merge)
+          - Security concerns (especially in auth/ and network/ packages)
+          - Test coverage adequacy
+          - Code style and consistency with the codebase
+
+          Also, analyze the PR and suggest appropriate GitHub labels. Common labels include:
+          - Types: `bug`, `enhancement`, `type:docs`, `type:refactor`, `type:testing`, `type:chore`
+          - Levels: `level:beginner`, `level:intermediate`, `level:advanced`, `level:critical`
+          - Packages: `package:core`, `package:db`, `package:sync`, `package:network`, `package:auth`, `package:cli`, `package:web`
+
+          Respond ONLY with valid JSON — no markdown, no extra text:
+          {{
+            "verdict": "APPROVE" | "REQUEST_CHANGES" | "COMMENT",
+            "summary": "2-3 sentence high-level assessment of the PR",
+            "issues": [
+              {{
+                "severity": "critical" | "major" | "minor" | "nitpick",
+                "file": "relative/path/to/file or empty string",
+                "description": "specific, actionable description of the issue"
+              }}
+            ],
+            "positives": ["specific things done well"],
+            "key_suggestion": "the single most important improvement to make, or empty string",
+            "safe_to_merge": true | false,
+            "suggested_labels": ["label1", "label2"]
+          }}
+
+          Verdict rules:
+          - APPROVE: no blockers, code is solid
+          - REQUEST_CHANGES: has critical or major issues that must be fixed
+          - COMMENT: only minor/nitpick issues or just observations
+          """
+
+          api_key = os.environ.get('GROQ_API_KEY', '')
+          if not api_key:
+              print("ERROR: GROQ_API_KEY secret not set", file=sys.stderr)
+              sys.exit(1)
+
+          url = "https://api.groq.com/openai/v1/chat/completions"
+          payload = {
+              "model": "llama-3.3-70b-versatile",
+              "messages": [
+                  {"role": "system", "content": "You are a helpful senior code reviewer. You strictly output JSON."},
+                  {"role": "user", "content": prompt}
+              ],
+              "temperature": 0.1,
+              "response_format": {"type": "json_object"}
+          }
+
+          req = urllib.request.Request(
+              url,
+              data=json.dumps(payload).encode(),
+              headers={
+                  "Authorization": f"Bearer {api_key}",
+                  "Content-Type": "application/json",
+                  "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+              },
+              method="POST"
+          )
+
+          try:
+              with urllib.request.urlopen(req, timeout=60) as resp:
+                  data = json.load(resp)
+          except urllib.error.HTTPError as e:
+              print(f"Groq API error {e.code}: {e.read().decode()}", file=sys.stderr)
+              sys.exit(1)
+
+          text = data['choices'][0]['message']['content']
+
+          # Parse JSON (Groq may wrap in code fences even with json_object)
+          match = re.search(r'\{[\s\S]*\}', text)
+          if match:
+              review = json.loads(match.group())
+          else:
+              try:
+                  review = json.loads(text)
+              except:
+                  review = {
+                      "verdict": "COMMENT",
+                      "summary": "Failed to parse AI response as JSON.\n\n" + text[:500],
+                      "issues": [],
+                      "positives": [],
+                      "key_suggestion": "",
+                      "safe_to_merge": False,
+                      "suggested_labels": []
+                  }
+
+          with open('review.json', 'w') as f:
+              json.dump(review, f, indent=2)
+
+          print(f"✅ Review generated — verdict: {review.get('verdict')}, safe_to_merge: {review.get('safe_to_merge')}, labels: {review.get('suggested_labels')}")
+          PYEOF
+        env:
+          GROQ_API_KEY:   ${{ secrets.GROQ_API_KEY }}
+          PR_TITLE:       ${{ github.event.issue.title || github.event.pull_request.title }}
+          PR_BODY:        ${{ github.event.issue.body || github.event.pull_request.body }}
+          PR_AUTHOR:      ${{ github.event.issue.user.login || github.event.pull_request.user.login }}
+          PR_NUMBER:      ${{ github.event.issue.number || github.event.pull_request.number }}
+
+      - name: Apply labels
+        run: |
+          python3 << 'PYEOF'
+          import json, subprocess, os
+
+          with open('review.json') as f:
+              r = json.load(f)
+
+          labels = r.get('suggested_labels', [])
+          if not labels:
+              print("No labels suggested by AI.")
+              exit(0)
+
+          pr   = os.environ['PR_NUMBER']
+          repo = os.environ['GITHUB_REPOSITORY']
+
+          print(f"Applying labels: {labels}")
+          payload = json.dumps({"labels": labels})
+          cmd = ['gh', 'api', f'repos/{repo}/issues/{pr}/labels', '--input', '-']
+          result = subprocess.run(cmd, input=payload, capture_output=True, text=True)
+          if result.returncode != 0:
+              print(f"Failed to apply labels: {result.stderr}")
+          else:
+              print("✅ Labels applied successfully")
+          PYEOF
+        env:
+          GH_TOKEN:            ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          PR_NUMBER:           ${{ github.event.issue.number || github.event.pull_request.number }}
+          GITHUB_REPOSITORY:   ${{ github.repository }}
+
+      - name: Post review comment
+        run: |
+          python3 << 'PYEOF'
+          import json, subprocess, os
+
+          with open('review.json') as f:
+              r = json.load(f)
+
+          verdict    = r.get('verdict', 'COMMENT')
+          summary    = r.get('summary', '')
+          issues     = r.get('issues', [])
+          positives  = r.get('positives', [])
+          suggestion = r.get('key_suggestion', '')
+          safe       = r.get('safe_to_merge', False)
+          labels     = r.get('suggested_labels', [])
+
+          VERDICT_ICON = {'APPROVE': '✅', 'REQUEST_CHANGES': '❌', 'COMMENT': '💬'}
+          SEV_ICON     = {'critical': '🔴', 'major': '🟠', 'minor': '🟡', 'nitpick': '🔵'}
+
+          lines = [
+              f"## {VERDICT_ICON.get(verdict, '💬')} AI Code Review — `{verdict}`",
+              "",
+              f"> {summary}",
+              "",
+          ]
+
+          if labels:
+              lines += [f"🏷️ **Auto-applied labels:** {', '.join(f'`{l}`' for l in labels)}", ""]
+
+          if positives:
+              lines += ["### ✨ Strengths", ""]
+              lines += [f"- {p}" for p in positives]
+              lines.append("")
+
+          if issues:
+              lines += ["### 🔍 Issues Found", ""]
+              for issue in issues:
+                  sev  = issue.get('severity', 'minor')
+                  icon = SEV_ICON.get(sev, '⚪')
+                  file_ref = f" [`{issue['file']}`]" if issue.get('file') else ""
+                  lines.append(f"- {icon} **{sev.upper()}**{file_ref} — {issue['description']}")
+              lines.append("")
+
+          if suggestion:
+              lines += ["### 💡 Key Suggestion", "", suggestion, ""]
+
+          merge_line = "✅ **Looks good to merge**" if safe else "⚠️ **Needs attention before merging**"
+          lines += [
+              "---",
+              f"{merge_line}  ",
+              "",
+              "_🤖 Automated review by [Groq AI](https://groq.com/) · ZerithDB CI Pipeline_",
+          ]
+
+          body   = "\n".join(lines)
+          pr     = os.environ['PR_NUMBER']
+          repo   = os.environ['GITHUB_REPOSITORY']
+
+          result = subprocess.run(
+              ['gh', 'pr', 'comment', pr, '--repo', repo, '--body', body],
+              capture_output=True, text=True
+          )
+          if result.returncode != 0:
+              print(f"Comment post error: {result.stderr}", flush=True)
+          else:
+              print("✅ Review comment posted", flush=True)
+          PYEOF
+        env:
+          GH_TOKEN:            ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          PR_NUMBER:           ${{ github.event.issue.number || github.event.pull_request.number }}
+          GITHUB_REPOSITORY:   ${{ github.repository }}
+
+      - name: Submit formal GitHub review
+        # Posts an official approve/request-changes review from the maintainer account
+        run: |
+          python3 << 'PYEOF'
+          import json, subprocess, os, sys
+
+          with open('review.json') as f:
+              r = json.load(f)
+
+          verdict = r.get('verdict', 'COMMENT')
+          summary = r.get('summary', 'Automated AI review completed.')
+          pr      = os.environ['PR_NUMBER']
+          repo    = os.environ['GITHUB_REPOSITORY']
+
+          flag_map = {
+              'APPROVE':         '--approve',
+              'REQUEST_CHANGES': '--request-changes',
+              'COMMENT':         '--comment',
+          }
+          flag = flag_map.get(verdict, '--comment')
+
+          result = subprocess.run(
+              ['gh', 'pr', 'review', pr, '--repo', repo, flag, '--body', summary],
+              capture_output=True, text=True
+          )
+          if result.returncode != 0:
+              # Not fatal — comment was already posted
+              print(f"Formal review note: {result.stderr}", flush=True)
+          else:
+              print(f"✅ Formal review submitted: {verdict}", flush=True)
+          PYEOF
+        env:
+          GH_TOKEN:          ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          PR_NUMBER:         ${{ github.event.issue.number || github.event.pull_request.number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        continue-on-error: true

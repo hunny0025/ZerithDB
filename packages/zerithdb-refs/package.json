@@ -1,0 +1,41 @@
+{
+  "name": "zerithdb-refs",
+  "version": "0.1.0",
+  "description": "Recursive document nesting with cross-collection sync for ZerithDB",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "happy-dom": "^20.9.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
+  },
+  "peerDependencies": {
+    "zerithdb-sdk": "*"
+  },
+  "peerDependenciesMeta": {
+    "zerithdb-sdk": {
+      "optional": true
+    }
+  }
+}

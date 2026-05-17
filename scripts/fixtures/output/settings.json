@@ -1,0 +1,11 @@
+[
+  {
+    "_firebaseKey": "settings",
+    "theme": "dark",
+    "language": "en",
+    "notifications": {
+      "email": true,
+      "push": false
+    }
+  }
+]

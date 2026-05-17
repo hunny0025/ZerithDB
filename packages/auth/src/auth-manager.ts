@@ -1,22 +1,28 @@
 import * as ed from "@noble/ed25519";
 import { sha512 } from "@noble/hashes/sha2.js";
 import type { ZerithDBConfig, Identity, Signature } from "zerithdb-core";
-import { ZerithDBError, ErrorCode } from "zerithdb-core";
+import { ZerithDBError, ErrorCode, EventEmitter } from "zerithdb-core";
+import { timingSafeEqual } from "./timing-safe.js";
 
 // noble/ed25519 requires a sha512 implementation
 ed.etc.sha512Sync = (...m) => sha512(ed.etc.concatBytes(...m));
+
+type AuthEvents = {
+  "identity:change": Identity | null;
+};
 
 /**
  * Manages the local Ed25519 keypair identity for this ZerithDB instance.
  * Identities are stored in localStorage as hex-encoded keys.
  * No servers involved — identity is fully self-sovereign.
  */
-export class AuthManager {
+export class AuthManager extends EventEmitter<AuthEvents> {
   private readonly storageKey: string;
   private _identity: Identity | null = null;
   private privateKeyBytes: Uint8Array | null = null;
 
   constructor(config: ZerithDBConfig) {
+    super();
     this.storageKey = config.auth?.storageKey ?? "__zerithdb_identity";
   }
 
@@ -34,6 +40,7 @@ export class AuthManager {
     if (stored !== null) {
       this._identity = stored.identity;
       this.privateKeyBytes = stored.privateKeyBytes;
+      this.emit("identity:change", this._identity);
       return this._identity;
     }
 
@@ -53,6 +60,7 @@ export class AuthManager {
     this.privateKeyBytes = privateKey;
 
     this.saveToStorage(privateKey, publicKeyBytes);
+    this.emit("identity:change", identity);
     return identity;
   }
 
@@ -93,6 +101,21 @@ export class AuthManager {
     }
   }
 
+  /**
+   * Securely compares two authentication token challenges in constant time.
+   * Mitigates potential timing attacks against the P2P cluster syncing auth protocols.
+   * Highly critical for distributed network synchronization.
+   */
+  verifyPeerChallenge(expected: string, received: string): boolean {
+    try {
+      const expectedBytes = hexToBytes(expected);
+      const receivedBytes = hexToBytes(received);
+      return timingSafeEqual(expectedBytes, receivedBytes);
+    } catch {
+      return false;
+    }
+  }
+
   /** The currently loaded identity, or null if not signed in */
   get identity(): Identity | null {
     return this._identity;
@@ -100,12 +123,15 @@ export class AuthManager {
 
   /** Sign out and clear the stored identity */
   signOut(): void {
-    this._identity = null;
-    this.privateKeyBytes = null;
-    try {
-      localStorage.removeItem(this.storageKey);
-    } catch {
-      // localStorage may not be available in all environments
+    if (this._identity !== null) {
+      this._identity = null;
+      this.privateKeyBytes = null;
+      try {
+        localStorage.removeItem(this.storageKey);
+      } catch {
+        // localStorage may not be available in all environments
+      }
+      this.emit("identity:change", null);
     }
   }
 

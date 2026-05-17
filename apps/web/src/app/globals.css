@@ -2,7 +2,7 @@
 
 @theme {
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  
+
   --color-border: #e5e7eb;
   --color-background: #ffffff;
   --color-foreground: #09090b;
@@ -15,6 +15,19 @@
 
   --color-accent: #3b82f6;
   --color-accent-foreground: #ffffff;
+  --color-background-dark: #09090b;
+  --color-foreground-dark: #fafafa;
+
+  --color-muted-dark: #18181b;
+  --color-muted-foreground-dark: #a1a1aa;
+
+  --color-card-dark: #111111;
+  --color-card-foreground-dark: #fafafa;
+
+  --color-border-dark: #27272a;
+
+  --color-primary-dark: #fafafa;
+  --color-primary-foreground-dark: #09090b;
 }
 
 @layer base {
@@ -24,6 +37,21 @@
   body {
     @apply bg-background text-foreground font-sans antialiased selection:bg-accent/20 selection:text-accent;
   }
+  .dark {
+    --color-background: var(--color-background-dark);
+    --color-foreground: var(--color-foreground-dark);
+
+    --color-muted: var(--color-muted-dark);
+    --color-muted-foreground: var(--color-muted-foreground-dark);
+
+    --color-card: var(--color-card-dark);
+    --color-card-foreground: var(--color-card-foreground-dark);
+
+    --color-border: var(--color-border-dark);
+
+    --color-primary: var(--color-primary-dark);
+    --color-primary-foreground: var(--color-primary-foreground-dark);
+  }
 }
 
 @layer utilities {
@@ -31,21 +59,4 @@
     text-wrap: balance;
   }
 
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-  }
-
-  @keyframes float-delayed {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-15px); }
-  }
-
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  .animate-float-delayed {
-    animation: float-delayed 8s ease-in-out infinite;
-  }
 }

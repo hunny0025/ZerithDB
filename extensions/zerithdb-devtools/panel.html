@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ZerithDB Memory</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #1e1e1e;
+        --surface: #2d2d2d;
+        --border: #3c3c3c;
+        --text: #e8e8e8;
+        --muted: #9a9a9a;
+        --accent-idb: #4fc3f7;
+        --accent-rtc: #81c784;
+        --warn: #ffb74d;
+        --danger: #ef5350;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          sans-serif;
+        font-size: 12px;
+        background: var(--bg);
+        color: var(--text);
+        padding: 12px;
+        min-height: 100vh;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+
+      h1 {
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      button {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 4px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+      }
+
+      button:hover {
+        background: #3a3a3a;
+      }
+
+      .stats-bar {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+
+      .stat-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 10px;
+      }
+
+      .stat-card.warn {
+        border-color: var(--warn);
+      }
+
+      .stat-card.danger {
+        border-color: var(--danger);
+      }
+
+      .stat-label {
+        color: var(--muted);
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 4px;
+      }
+
+      .stat-value {
+        font-size: 16px;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .stat-peak {
+        color: var(--muted);
+        font-size: 10px;
+        margin-top: 2px;
+      }
+
+      .stat-idb .stat-value {
+        color: var(--accent-idb);
+      }
+
+      .stat-rtc .stat-value {
+        color: var(--accent-rtc);
+      }
+
+      .chart-wrap {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 8px;
+        margin-bottom: 12px;
+        height: 200px;
+      }
+
+      .chart-wrap canvas {
+        width: 100% !important;
+        height: 100% !important;
+      }
+
+      .peers h2 {
+        font-size: 11px;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 8px;
+      }
+
+      .peer-list {
+        list-style: none;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        max-height: 120px;
+        overflow-y: auto;
+      }
+
+      .peer-list li {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 10px;
+        border-bottom: 1px solid var(--border);
+        font-variant-numeric: tabular-nums;
+      }
+
+      .peer-list li:last-child {
+        border-bottom: none;
+      }
+
+      .peer-id {
+        font-family: ui-monospace, monospace;
+        font-size: 11px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 70%;
+      }
+
+      .empty {
+        color: var(--muted);
+        padding: 12px;
+        text-align: center;
+      }
+
+      .status {
+        color: var(--muted);
+        font-size: 11px;
+        margin-top: 8px;
+      }
+
+      .status.live {
+        color: var(--accent-rtc);
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>ZerithDB Memory</h1>
+      <button type="button" id="clear-btn">Clear graph</button>
+    </header>
+
+    <section class="stats-bar">
+      <div class="stat-card stat-idb" id="idb-card">
+        <div class="stat-label">IndexedDB</div>
+        <div class="stat-value" id="idb-current">—</div>
+        <div class="stat-peak" id="idb-peak">Peak: —</div>
+        <div class="stat-peak" id="idb-records">Records: —</div>
+      </div>
+      <div class="stat-card stat-rtc" id="rtc-card">
+        <div class="stat-label">WebRTC buffers</div>
+        <div class="stat-value" id="rtc-current">—</div>
+        <div class="stat-peak" id="rtc-peak">Peak: —</div>
+        <div class="stat-peak" id="rtc-peers">Peers: —</div>
+      </div>
+    </section>
+
+    <section class="chart-wrap">
+      <canvas id="memory-chart"></canvas>
+    </section>
+
+    <section class="peers">
+      <h2>Peer buffers</h2>
+      <ul class="peer-list" id="peer-list">
+        <li class="empty">No peers connected</li>
+      </ul>
+    </section>
+
+    <p class="status" id="status">Waiting for ZerithDB snapshots…</p>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="panel.js"></script>
+  </body>
+</html>

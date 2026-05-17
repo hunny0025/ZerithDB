@@ -1,6 +1,8 @@
 "use client";
-
+import SocialGraph from "../components/SocialGraph";
 import Link from "next/link";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
+import toast from "react-hot-toast";
 import {
   ArrowRight,
   Database,
@@ -13,10 +15,46 @@ import {
   FileCode,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import CodeWalkthrough from "@/components/CodeWalkthrough";
-import TerminalShowcase from "@/components/TerminalShowcase";
-import AnimatedDiagram from "@/components/AnimatedDiagram";
+import dynamic from "next/dynamic";
+import Image from "next/image";
+
+const CodeWalkthrough = dynamic(
+  () => import("@/components/CodeWalkthrough"),
+  {
+    loading: () => (
+      <div className="h-96 animate-pulse rounded-xl bg-gray-100" />
+    ),
+  }
+);
+
+const TerminalShowcase = dynamic(
+  () => import("@/components/TerminalShowcase"),
+  {
+    loading: () => (
+      <div className="h-96 animate-pulse rounded-xl bg-gray-100" />
+    ),
+  }
+);
+
+const AnimatedDiagram = dynamic(
+  () => import("@/components/AnimatedDiagram"),
+  {
+    loading: () => (
+      <div className="h-96 animate-pulse rounded-xl bg-gray-100" />
+    ),
+  }
+);
+
 import FrameworkSection from "@/components/FrameworkSection";
+
+const HomePlayground = dynamic(() => import("@/components/HomePlayground"), {
+  ssr: false,
+  loading: () => (
+    <section id="playground" className="py-24 px-6 border-y border-border">
+      <div className="max-w-6xl mx-auto h-96 rounded-2xl bg-muted animate-pulse" aria-hidden />
+    </section>
+  ),
+});
 
 export default function LandingPage() {
   const fadeInUp = {
@@ -37,9 +75,9 @@ export default function LandingPage() {
   };
 
   return (
-    <main className="flex flex-col min-h-screen bg-white selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
+    <main className="flex flex-col min-h-screen bg-background text-foreground transition-colors duration-300 selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
       {/* ── HEADER ── */}
-      <header className="sticky top-0 z-50 w-full border-b border-gray-200/50 bg-white/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md transition-colors duration-300">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <motion.div
@@ -47,11 +85,17 @@ export default function LandingPage() {
               animate={{ rotate: 0, scale: 1 }}
               className="w-10 h-10 flex items-center justify-center overflow-hidden"
             >
-              <img src="/logo.svg" alt="ZerithDB Logo" className="w-full h-full" />
+              <Image
+                src="/logo.svg"
+                alt="ZerithDB Logo"
+                width={40}
+                height={40}
+                className="w-full h-full"
+              />
             </motion.div>
             <span className="font-semibold text-xl tracking-tight">ZerithDB</span>
           </div>
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
             <Link href="/docs" className="hover:text-black transition-colors font-medium">
               Docs
             </Link>
@@ -65,18 +109,19 @@ export default function LandingPage() {
               Compare
             </Link>
             <Link
-              href="/playground"
+              href="#playground"
               className="text-blue-600 font-semibold hover:text-blue-700 transition-colors flex items-center gap-1.5"
             >
               <Zap className="w-4 h-4" /> Playground
             </Link>
           </nav>
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <a
               href="https://github.com/Zerith-Labs/ZerithDB"
               target="_blank"
-              rel="noreferrer"
-              className="hidden md:flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-black transition-colors"
+              rel="noopener noreferrer"
+              className="hidden md:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-black transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -106,24 +151,73 @@ export default function LandingPage() {
       </header>
 
       {/* ── 1. HERO SECTION ── */}
-      <section className="relative pt-32 pb-20 px-6 max-w-6xl mx-auto text-center">
+      <section className="relative pt-32 pb-20 px-6 max-w-7xl mx-auto text-center">
         {/* Background Decorations */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full -z-10 pointer-events-none overflow-visible">
+          {/* Subtle Dot Grid Pattern */}
+          <div
+            className="absolute inset-0 opacity-[0.15]"
+            style={{
+              backgroundImage: `radial-gradient(#cbd5e1 1px, transparent 1px)`,
+              backgroundSize: "24px 24px",
+            }}
+          />
+
+          {/* Blurred Background Glows */}
           <motion.div
             animate={{
               y: [0, -20, 0],
-              opacity: [0.3, 0.5, 0.3],
+              opacity: [0.3, 0.4, 0.3],
             }}
             transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-20 -left-20 w-64 h-64 bg-blue-100 rounded-full blur-3xl"
+            className="absolute top-10 left-1/4 w-[500px] h-[500px] bg-blue-100/50 rounded-full blur-[100px]"
           />
           <motion.div
             animate={{
               y: [0, 20, 0],
-              opacity: [0.2, 0.4, 0.2],
+              opacity: [0.2, 0.3, 0.2],
             }}
             transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute top-40 -right-20 w-80 h-80 bg-indigo-100 rounded-full blur-3xl"
+            className="absolute top-20 right-1/4 w-[600px] h-[600px] bg-indigo-100/40 rounded-full blur-[120px]"
+          />
+
+          {/* Central Glow behind text */}
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-[400px] h-[400px] bg-blue-50/30 rounded-full blur-[80px]" />
+
+          {/* Structured Decorative Elements - Moved closer for framing */}
+          {/* Left Abstract Shape - More animated & fluid */}
+          <motion.div
+            animate={{
+              y: [0, -25, 10, 0],
+              x: [0, 15, -10, 0],
+              scale: [1, 1.1, 0.95, 1],
+              rotate: [-15, 5, -25, -15],
+              borderRadius: ["2.5rem", "4rem", "2rem", "2.5rem"],
+            }}
+            transition={{
+              duration: 12,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="absolute top-[10%] left-[5%] w-40 h-40 bg-white/20 border border-blue-200/40 backdrop-blur-[12px] hidden xl:block shadow-[0_20px_50px_rgba(59,130,246,0.15)]"
+          />
+
+          {/* Right Abstract Shape - Reduced size and softened shadow */}
+          <motion.div
+            animate={{
+              y: [0, 20, -10, 0],
+              x: [0, -15, 10, 0],
+              scale: [1, 0.95, 1.05, 1],
+              rotate: [25, 40, 20, 25],
+              borderRadius: ["2.5rem", "4rem", "2rem", "2.5rem"],
+            }}
+            transition={{
+              duration: 15,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 1,
+            }}
+            className="absolute top-[38%] right-[5%] w-52 h-52 bg-white/10 border border-indigo-200/40 backdrop-blur-[6px] hidden xl:block shadow-[0_8px_30px_rgba(99,102,241,0.06)]"
           />
         </div>
 
@@ -132,13 +226,13 @@ export default function LandingPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
         >
-          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-balance leading-tight text-gray-900">
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-balance leading-tight text-foreground transition-colors duration-300">
             Build full-stack apps with <br className="hidden md:block" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
               ZERO backend.
             </span>
           </h1>
-          <p className="mt-6 text-xl text-gray-500 max-w-2xl mx-auto text-balance">
+          <p className="mt-6 text-xl text-muted-foreground max-w-2xl mx-auto text-balance transition-colors duration-300">
             The browser is the server. Local-first, peer-to-peer, CRDT-powered database platform.
             Replace your backend, database, and auth system entirely.
           </p>
@@ -158,7 +252,7 @@ export default function LandingPage() {
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
           <Link
-            href="/playground"
+            href="#playground"
             className="flex items-center gap-2 bg-blue-50 text-blue-700 border border-blue-100 px-6 py-3.5 rounded-xl font-medium text-base hover:bg-blue-100 transition-all w-full sm:w-auto justify-center shadow-sm"
           >
             <Zap className="w-4 h-4 animate-pulse" />
@@ -167,8 +261,8 @@ export default function LandingPage() {
           <a
             href="https://github.com/Zerith-Labs/ZerithDB"
             target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-2 bg-white text-gray-900 border border-gray-200 px-6 py-3.5 rounded-xl font-medium text-base hover:bg-gray-50 transition-all w-full sm:w-auto justify-center shadow-sm"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 bg-background text-foreground border border-border px-6 py-3.5 rounded-xl font-medium text-base hover:bg-muted transition-all transition-colors duration-300 w-full sm:w-auto justify-center shadow-sm"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -210,7 +304,7 @@ export default function LandingPage() {
       </section>
 
       {/* ── 2. TRUST / SOCIAL PROOF ── */}
-      <section className="py-10 border-y border-gray-100 bg-gray-50/50 overflow-hidden">
+      <section className="py-10 border-y border-border bg-muted overflow-hidden transition-colors duration-300">
         <motion.div
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -244,14 +338,16 @@ export default function LandingPage() {
         </motion.div>
       </section>
 
+      <HomePlayground />
+
       {/* ── INTERACTIVE CODE SECTION ── */}
-      <section className="py-24 px-6 bg-white border-b border-gray-100">
+      <section className="py-24 px-6 bg-background border-b border-border transition-colors duration-300">
         <div className="max-w-6xl mx-auto">
           <motion.div {...fadeInUp} className="mb-12 md:text-center max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
               Developer Experience First
             </h2>
-            <p className="mt-4 text-lg text-gray-500">
+            <p className="mt-4 text-lg text-muted-foreground">
               A powerful, fully-typed SDK that feels like magic. No configuration required.
             </p>
           </motion.div>
@@ -267,13 +363,13 @@ export default function LandingPage() {
       </section>
 
       {/* ── 3. CORE FEATURES ── */}
-      <section id="features" className="py-24 px-6 bg-gray-50">
+      <section id="features" className="py-24 px-6 bg-muted transition-colors duration-300">
         <div className="max-w-6xl mx-auto">
           <motion.div {...fadeInUp} className="mb-16 md:text-center max-w-3xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground transition-colors duration-300">
               Everything you need. Nothing you don&apos;t.
             </h2>
-            <p className="mt-4 text-lg text-gray-500">
+            <p className="mt-4 text-lg text-muted-foreground">
               Stop managing infrastructure. ZerithDB provides the entire data layer right inside the
               client.
             </p>
@@ -319,14 +415,14 @@ export default function LandingPage() {
               },
             ].map((feature, i) => (
               <motion.div key={i} variants={fadeInUp} className="flex gap-4 group">
-                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-white border border-gray-200 shadow-sm flex items-center justify-center text-gray-900 group-hover:border-blue-200 group-hover:shadow-md transition-all">
+                <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-background border border-border shadow-sm flex items-center justify-center text-foreground group-hover:border-blue-200 group-hover:shadow-md transition-all">
                   <feature.icon className="w-6 h-6 stroke-[1.5] group-hover:text-blue-600 transition-colors" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
+                  <h3 className="text-lg font-semibold text-foreground group-hover:text-blue-600 transition-colors">
                     {feature.title}
                   </h3>
-                  <p className="mt-2 text-sm text-gray-500 leading-relaxed">{feature.desc}</p>
+                  <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{feature.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -335,11 +431,11 @@ export default function LandingPage() {
       </section>
 
       {/* ── 4. HOW IT WORKS / DIAGRAM ── */}
-      <section id="how-it-works" className="py-24 px-6 bg-white border-y border-gray-200/50">
+      <section id="how-it-works" className="py-24 px-6 bg-background border-y border-border transition-colors duration-300">
         <div className="max-w-6xl mx-auto">
           <motion.div {...fadeInUp} className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900">How it works</h2>
-            <p className="mt-4 text-gray-500 text-lg">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground transition-colors duration-300">How it works</h2>
+            <p className="mt-4 text-muted-foreground text-lg transition-colors duration-300">
               A simple, powerful data flow entirely in the browser.
             </p>
           </motion.div>
@@ -380,13 +476,13 @@ export default function LandingPage() {
               <motion.div
                 key={i}
                 variants={fadeInUp}
-                className="flex-1 bg-gray-50 p-8 rounded-2xl border border-gray-100 relative w-full text-center md:text-left hover:shadow-lg transition-shadow"
+                className="flex-1 bg-muted dark:bg-card dark:text-card-foreground p-8 rounded-2xl border border-border relative w-full text-center md:text-left hover:shadow-lg transition-all duration-300"
               >
                 <div className="w-10 h-10 bg-black text-white rounded-lg flex items-center justify-center font-bold text-sm mb-6 shadow-md mx-auto md:mx-0">
                   {item.step}
                 </div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">{item.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
+                <h3 className="text-xl font-semibold text-foreground mb-2 transition-colors duration-300">{item.title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed transition-colors duration-300">{item.desc}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -394,13 +490,13 @@ export default function LandingPage() {
       </section>
 
       {/* ── 5. PERFORMANCE BENCHMARKS ── */}
-      <section className="py-24 px-6 bg-gray-50">
+      <section className="py-24 px-6 bg-muted transition-colors duration-300">
         <div className="max-w-4xl mx-auto">
           <motion.div {...fadeInUp} className="mb-12 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground transition-colors duration-300">
               Unbeatable Latency
             </h2>
-            <p className="mt-4 text-lg text-gray-500">
+            <p className="mt-4 text-lg text-muted-foreground">
               Because data never leaves the device for reads/writes, ZerithDB operates at the speed
               of RAM and SSD, not the speed of the internet.
             </p>
@@ -411,18 +507,18 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, x: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="bg-white p-8 rounded-2xl shadow-sm border border-gray-200"
+            className="bg-background dark:bg-card dark:text-card-foreground p-8 rounded-2xl shadow-sm border border-border transition-colors duration-300"
           >
-            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-6">
+            <h3 className="text-sm font-bold text-muted-foreground uppercase tracking-wider mb-6">
               Average Write Latency (ms)
             </h3>
             <div className="space-y-6">
               <div>
                 <div className="flex justify-between text-sm font-medium mb-2">
-                  <span className="text-gray-900">Firebase (Managed Cloud)</span>
-                  <span className="text-gray-500">~65ms</span>
+                  <span className="text-foreground">Firebase (Managed Cloud)</span>
+                  <span className="text-muted-foreground">~65ms</span>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-3">
+                <div className="w-full bg-muted rounded-full h-3">
                   <motion.div
                     initial={{ width: 0 }}
                     whileInView={{ width: "65%" }}
@@ -435,10 +531,10 @@ export default function LandingPage() {
 
               <div>
                 <div className="flex justify-between text-sm font-medium mb-2">
-                  <span className="text-gray-900">Supabase (Managed Cloud)</span>
-                  <span className="text-gray-500">~45ms</span>
+                  <span className="text-foreground">Supabase (Managed Cloud)</span>
+                  <span className="text-muted-foreground">~45ms</span>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-3">
+                <div className="w-full bg-muted rounded-full h-3">
                   <motion.div
                     initial={{ width: 0 }}
                     whileInView={{ width: "45%" }}
@@ -451,7 +547,7 @@ export default function LandingPage() {
 
               <div>
                 <div className="flex justify-between text-sm font-medium mb-2">
-                  <span className="text-gray-900 font-bold flex items-center gap-2">
+                  <span className="text-foreground font-bold flex items-center gap-2">
                     ZerithDB (Local-first){" "}
                     <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
                       Fastest
@@ -459,7 +555,7 @@ export default function LandingPage() {
                   </span>
                   <span className="text-blue-600 font-bold">~0.5ms</span>
                 </div>
-                <div className="w-full bg-gray-100 rounded-full h-3">
+                <div className="w-full bg-muted rounded-full h-3">
                   <motion.div
                     initial={{ width: 0 }}
                     whileInView={{ width: "2%" }}
@@ -474,14 +570,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── 6. COMPARISON SECTION ── */}
-      <section id="compare" className="py-24 px-6 bg-white">
+      <section id="compare" className="py-24 px-6 bg-background transition-colors duration-300">
         <div className="max-w-5xl mx-auto">
           <motion.div {...fadeInUp} className="text-center mb-16">
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground transition-colors duration-300">
               The Modern Data Layer
             </h2>
-            <p className="mt-4 text-gray-500 text-lg">
+            <p className="mt-4 text-muted-foreground text-lg">
               See how ZerithDB compares to traditional architectures.
             </p>
           </motion.div>
@@ -491,11 +586,11 @@ export default function LandingPage() {
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
-            className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm"
+            className="overflow-x-auto rounded-2xl border border-border shadow-sm transition-colors duration-300 dark:bg-card"
           >
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-gray-50 text-gray-900 border-b border-gray-200">
+                <tr className="bg-muted text-foreground border-b border-border">
                   <th className="py-4 px-6 font-semibold w-1/4">Feature</th>
                   <th className="py-4 px-6 font-semibold w-1/4">Firebase</th>
                   <th className="py-4 px-6 font-semibold w-1/4">Supabase</th>
@@ -539,12 +634,12 @@ export default function LandingPage() {
                 ].map((row, i) => (
                   <tr
                     key={i}
-                    className="border-b border-gray-100 hover:bg-gray-50/50 transition-colors bg-white"
+                    className="border-b border-border hover:bg-muted/50 transition-colors bg-background"
                   >
-                    <td className="py-4 px-6 text-gray-900 font-medium">{row.feature}</td>
-                    <td className="py-4 px-6 text-gray-500">{row.fb}</td>
-                    <td className="py-4 px-6 text-gray-500">{row.sb}</td>
-                    <td className="py-4 px-6 text-gray-900 font-semibold bg-blue-50/30">
+                    <td className="py-4 px-6 text-foreground font-medium">{row.feature}</td>
+                    <td className="py-4 px-6 text-muted-foreground">{row.fb}</td>
+                    <td className="py-4 px-6 text-muted-foreground">{row.sb}</td>
+                    <td className="py-4 px-6 text-foreground font-semibold bg-blue-50/30">
                       {row.zdb}
                     </td>
                   </tr>
@@ -556,10 +651,10 @@ export default function LandingPage() {
       </section>
 
       {/* ── 7. USE CASES ── */}
-      <section id="use-cases" className="py-24 px-6 bg-white border-t border-gray-100">
+      <section id="use-cases" className="py-24 px-6 bg-background border-t border-border transition-colors duration-300">
         <div className="max-w-6xl mx-auto">
           <motion.div {...fadeInUp} className="mb-16 md:text-center max-w-2xl mx-auto">
-            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-gray-900">
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground transition-colors duration-300">
               Built for the next generation of apps
             </h2>
           </motion.div>
@@ -593,11 +688,11 @@ export default function LandingPage() {
                 key={i}
                 variants={fadeInUp}
                 whileHover={{ y: -5, transition: { duration: 0.2 } }}
-                className="bg-white border border-gray-200 shadow-sm p-8 rounded-2xl hover:shadow-md hover:border-blue-200 transition-all cursor-default"
+                className="bg-background border border-border shadow-sm p-8 rounded-2xl hover:shadow-md hover:border-blue-200 transition-all cursor-default dark:bg-card dark:text-card-foreground transition-colors duration-300"
               >
                 <CheckCircle className="w-8 h-8 text-blue-600 mb-4" />
-                <h3 className="text-xl font-semibold mb-2 text-gray-900">{uc.title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{uc.desc}</p>
+                <h3 className="text-xl font-semibold mb-2 text-foreground">{uc.title}</h3>
+                <p className="text-muted-foreground text-sm leading-relaxed">{uc.desc}</p>
               </motion.div>
             ))}
           </motion.div>
@@ -607,12 +702,42 @@ export default function LandingPage() {
       {/* ── 9. CTA SECTION ── */}
       <section
         id="get-started"
-        className="py-32 px-6 bg-white text-center relative overflow-hidden"
+        className="py-32 px-6 bg-background text-center relative overflow-hidden transition-colors duration-300"
       >
         {/* Abstract shapes for CTA */}
-        <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-10">
-          <div className="absolute top-10 left-10 w-32 h-32 border-2 border-black rounded-full rotate-45 animate-float" />
-          <div className="absolute bottom-10 right-10 w-48 h-48 border-2 border-black rounded-xl -rotate-12 animate-float-delayed" />
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+          {/* Subtle Background Glow for CTA */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-50/50 rounded-full blur-[100px] -z-10" />
+
+          <motion.div
+            animate={{
+              y: [0, -20, 15, 0],
+              x: [0, 10, -15, 0],
+              rotate: [12, 28, 5, 12],
+              borderRadius: ["2rem", "3.5rem", "1.5rem", "2rem"],
+            }}
+            transition={{
+              duration: 14,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="absolute top-12 left-[12%] w-36 h-36 bg-white/15 border border-blue-200/30 backdrop-blur-[10px] hidden md:block shadow-[0_15px_35px_rgba(0,0,0,0.08)]"
+          />
+          <motion.div
+            animate={{
+              y: [0, 20, -15, 0],
+              x: [0, -10, 8, 0],
+              rotate: [-20, -30, -15, -20],
+              borderRadius: ["3rem", "4rem", "2rem", "3rem"],
+            }}
+            transition={{
+              duration: 18,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 1,
+            }}
+            className="absolute bottom-12 right-[15%] w-48 h-48 bg-white/5 border border-gray-200/40 backdrop-blur-[5px] hidden md:block shadow-[0_10px_30px_rgba(0,0,0,0.03)]"
+          />
         </div>
 
         <motion.div
@@ -622,10 +747,10 @@ export default function LandingPage() {
           transition={{ duration: 0.8 }}
           className="max-w-3xl mx-auto relative z-10"
         >
-          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-gray-900 mb-6 text-balance">
+          <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-foreground mb-6 text-balance transition-colors duration-300">
             Start building without a backend today.
           </h2>
-          <p className="text-xl text-gray-500 mb-10">
+          <p className="text-xl text-muted-foreground mb-10">
             Open source. Developer first. Ready for production.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -642,8 +767,8 @@ export default function LandingPage() {
               whileTap={{ scale: 0.95 }}
               href="https://github.com/Zerith-Labs/ZerithDB"
               target="_blank"
-              rel="noreferrer"
-              className="bg-gray-100 text-gray-900 px-8 py-4 rounded-xl font-medium text-base hover:bg-gray-200 transition-all w-full sm:w-auto flex items-center justify-center gap-2"
+              rel="noopener noreferrer"
+              className="bg-muted text-foreground px-8 py-4 rounded-xl font-medium text-base hover:bg-muted/90 transition-all w-full sm:w-auto flex items-center justify-center gap-2 dark:bg-card dark:text-card-foreground transition-colors duration-300"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -667,41 +792,58 @@ export default function LandingPage() {
       </section>
 
       {/* ── 9. FOOTER ── */}
-      <footer className="border-t border-gray-200 py-12 px-6 bg-white">
+      <footer className="border-t border-border py-12 px-6 bg-background transition-colors duration-300">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 flex items-center justify-center">
               <img src="/logo.svg" alt="ZerithDB Logo" className="w-full h-full" />
             </div>
-            <span className="font-semibold text-gray-900 text-lg">ZerithDB</span>
+            <span className="font-semibold text-foreground text-lg">ZerithDB</span>
           </div>
 
-          <div className="flex items-center gap-6 text-sm text-gray-500 font-medium">
-            <Link href="/docs" className="hover:text-gray-900 transition-colors">
+          <div className="flex items-center gap-6 text-sm text-muted-foreground font-medium">
+            <Link href="/docs" className="hover:text-foreground transition-colors">
               Documentation
             </Link>
             <a
               href="https://github.com/Zerith-Labs/ZerithDB"
-              className="hover:text-gray-900 transition-colors"
+              target="_blank"
+              rel="noreferrer"
+              className="hover:text-foreground transition-colors"
             >
               GitHub
             </a>
-            <Link href="/blog" className="hover:text-gray-900 transition-colors">
+            <Link
+              href="/"
+              onClick={() => toast("Blog will be available soon")}
+              className="hover:text-foreground transition-colors cursor-pointer"
+            >
               Blog
             </Link>
-            <Link href="/pricing" className="hover:text-gray-900 transition-colors">
+            <Link
+              href="/"
+              onClick={() => toast("Pricing will be available soon")}
+              className="hover:text-foreground transition-colors cursor-pointer"
+            >
               Pricing
             </Link>
-            <a href="#" className="hover:text-gray-900 transition-colors">
+            <a
+              href="https://discord.gg/MhvuDvzWfF"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-foreground transition-colors"
+            >
+
               Discord
             </a>
           </div>
 
-          <div className="text-sm text-gray-400">
+          <div className="text-sm text-muted-foreground">
             © {new Date().getFullYear()} ZerithDB. Open Source.
           </div>
         </div>
       </footer>
+      <SocialGraph />
     </main>
   );
 }

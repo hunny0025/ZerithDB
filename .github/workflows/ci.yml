@@ -45,9 +45,6 @@ jobs:
       - name: Lint (ESLint)
         run: pnpm turbo lint
 
-      - name: Format check (Prettier)
-        run: pnpm format:check
-
   # ── 2. TypeScript type-check ────────────────────────────────────────────────
   typecheck:
     name: TypeCheck

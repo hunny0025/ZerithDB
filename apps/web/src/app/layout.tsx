@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme/theme-provider";
+import ToasterProvider from "@/components/ToasterProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -20,9 +22,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="bg-white text-gray-900 font-sans selection:bg-blue-100 selection:text-blue-900">
-        {children}
+    <html lang="en" className={inter.variable} suppressHydrationWarning>
+      <body className="bg-background text-foreground font-sans antialiased transition-colors duration-300 selection:bg-accent/20 selection:text-accent">
+        <ThemeProvider>
+          {children}
+          <ToasterProvider />
+        </ThemeProvider>
       </body>
     </html>
   );

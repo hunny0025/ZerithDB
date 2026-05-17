@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "ZerithDB DevTools",
+  "version": "0.1.0",
+  "description": "Live memory visualizer for ZerithDB — IndexedDB storage and WebRTC buffer usage",
+  "devtools_page": "devtools.html",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "permissions": ["tabs"]
+}

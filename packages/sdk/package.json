@@ -34,12 +34,14 @@
     "build": "tsup src/index.ts --format esm,cjs --dts --treeshake",
     "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
     "clean": "rimraf dist"
   },
   "dependencies": {
     "zerithdb-auth": "workspace:*",
     "zerithdb-core": "workspace:*",
     "zerithdb-db": "workspace:*",
+    "zerithdb-devtools": "workspace:*",
     "zerithdb-network": "workspace:*",
     "zerithdb-sync": "workspace:*"
   },

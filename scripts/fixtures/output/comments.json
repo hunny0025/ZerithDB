@@ -1,0 +1,16 @@
+[
+  {
+    "_firebaseKey": "-Mc001",
+    "postId": "-Mabc1",
+    "userId": "-Mxyz2",
+    "text": "Great article!",
+    "timestamp": 1700000000000
+  },
+  {
+    "_firebaseKey": "-Mc002",
+    "postId": "-Mabc1",
+    "userId": "-Mxyz3",
+    "text": "Very helpful, thanks!",
+    "timestamp": 1700000060000
+  }
+]

@@ -1,0 +1,172 @@
+name: "🐛 Bug Report"
+description: "Report a bug or unexpected behavior in ZerithDB"
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## Thanks for taking the time to report a bug! 🙏
+        Before submitting, please:
+        - 🔍 Search [existing issues](https://github.com/Zerith-Labs/ZerithDB/issues) to avoid duplicates
+        - 📖 Read the [Contributing Guide](https://github.com/Zerith-Labs/ZerithDB/blob/main/CONTRIBUTING.md)
+        - 💬 For questions, use [GitHub Discussions](https://github.com/Zerith-Labs/ZerithDB/discussions) instead
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "📋 Description"
+      description: "A clear and concise description of what the bug is."
+      placeholder: "Describe what went wrong..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction-steps
+    attributes:
+      label: "🔁 Reproduction Steps"
+      description: "Step-by-step instructions to reproduce the behavior. The more detail, the faster we can fix it."
+      placeholder: |
+        1. Initialize ZerithDB with `...`
+        2. Run the query `...`
+        3. Observe the error `...`
+    validations:
+      required: true
+
+  - type: textarea
+    id: minimal-reproduction
+    attributes:
+      label: "🔬 Minimal Reproduction"
+      description: "If possible, provide a minimal code snippet that reproduces the issue."
+      placeholder: |
+```typescript
+        import { ZerithDB } from 'zerithdb';
+        
+        const db = new ZerithDB();
+        // your reproduction code here
+```
+      render: typescript
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: "✅ Expected Behavior"
+      description: "What did you expect to happen?"
+      placeholder: "Describe what you expected to happen instead..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: "❌ Actual Behavior"
+      description: "What actually happened? Include any error messages or stack traces."
+      placeholder: "Paste error output or describe the unexpected result..."
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: "## 🖥️ Environment"
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: "Operating System"
+      description: "Which OS are you running ZerithDB on?"
+      options:
+        - "Windows 10"
+        - "Windows 11"
+        - "macOS (Intel)"
+        - "macOS (Apple Silicon)"
+        - "Ubuntu / Debian"
+        - "Fedora / RHEL / CentOS"
+        - "Other Linux"
+        - "Other (specify in additional context)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: node-version
+    attributes:
+      label: "Node.js Version"
+      description: "Which version of Node.js are you using? Run `node --version` to check."
+      options:
+        - "22.x (LTS)"
+        - "20.x (LTS)"
+        - "18.x"
+        - "Other (specify in additional context)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: package-manager
+    attributes:
+      label: "Package Manager"
+      description: "Which package manager are you using?"
+      options:
+        - "pnpm (recommended)"
+        - "npm"
+        - "yarn"
+        - "bun"
+    validations:
+      required: true
+
+  - type: input
+    id: zerithdb-version
+    attributes:
+      label: "ZerithDB Version"
+      description: "What version of ZerithDB are you using? Run `pnpm list zerithdb` to check."
+      placeholder: "e.g. 1.2.3"
+    validations:
+      required: true
+
+  - type: input
+    id: affected-packages
+    attributes:
+      label: "Affected Package(s)"
+      description: "Which ZerithDB package(s) are affected?"
+      placeholder: "e.g. zerithdb-db, zerithdb-sync, zerithdb-sdk"
+    validations:
+      required: false
+
+  - type: dropdown
+    id: regression
+    attributes:
+      label: "Is this a regression?"
+      description: "Did this work in a previous version of ZerithDB?"
+      options:
+        - "Yes — it worked before"
+        - "No — it never worked"
+        - "Not sure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: "📎 Additional Context"
+      description: "Add any other context, screenshots, config snippets, or logs that might help diagnose the issue."
+      placeholder: "Paste logs, screenshots, config snippets, etc."
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: "✔️ Checklist"
+      options:
+        - label: "I have searched existing issues and this bug has not already been reported."
+          required: true
+        - label: "I have included all relevant information above."
+          required: true
+        - label: "I have provided a minimal reproduction if possible."
+          required: false
+        - label: "I am using a supported version of Node.js (18.x or higher)."
+          required: false
+        - label: "I have read the Contributing Guide."
+          required: false
