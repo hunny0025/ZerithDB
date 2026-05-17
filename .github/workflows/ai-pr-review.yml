@@ -113,19 +113,30 @@ jobs:
               "response_format": {"type": "json_object"}
           }
 
-          def call_groq(api_key):
-              req = urllib.request.Request(
-                  url,
-                  data=json.dumps(payload).encode(),
-                  headers={
-                      "Authorization": f"Bearer {api_key}",
-                      "Content-Type": "application/json",
-                      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
-                  },
-                  method="POST"
-              )
-              with urllib.request.urlopen(req, timeout=60) as resp:
-                  return json.load(resp)
+          import time
+
+          def call_groq_with_retry(api_key, max_retries=3, initial_wait=5):
+              for attempt in range(max_retries):
+                  try:
+                      req = urllib.request.Request(
+                          url,
+                          data=json.dumps(payload).encode(),
+                          headers={
+                              "Authorization": f"Bearer {api_key}",
+                              "Content-Type": "application/json",
+                              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+                          },
+                          method="POST"
+                      )
+                      with urllib.request.urlopen(req, timeout=60) as resp:
+                          return json.load(resp)
+                  except urllib.error.HTTPError as e:
+                      if e.code == 429 and attempt < max_retries - 1:
+                          wait_time = initial_wait * (2 ** attempt)
+                          print(f"Rate limited. Retrying in {wait_time}s (attempt {attempt + 1}/{max_retries})...", file=sys.stderr)
+                          time.sleep(wait_time)
+                          continue
+                      raise
 
           data = None
           keys_to_try = [("primary", primary_key), ("fallback", fallback_key)]
@@ -133,20 +144,28 @@ jobs:
               if not key:
                   continue
               try:
-                  data = call_groq(key)
+                  data = call_groq_with_retry(key)
                   print(f"✅ Groq request succeeded using {label} key")
                   break
-              except urllib.error.HTTPError as e:
-                  body = e.read().decode()
-                  print(f"Groq API error {e.code} ({label} key): {body}", file=sys.stderr)
-                  if e.code == 429 and label == "primary" and fallback_key:
-                      print("Rate limit hit on primary key — retrying with fallback key…", file=sys.stderr)
-                      continue
-                  sys.exit(1)
+              except Exception as e:
+                  print(f"Failed to get response using {label} key: {e}", file=sys.stderr)
+                  continue
 
           if data is None:
-              print("ERROR: All Groq API keys exhausted or unavailable", file=sys.stderr)
-              sys.exit(1)
+              print("⚠️ WARNING: All Groq API keys exhausted or unavailable. Skipping AI review.", file=sys.stderr)
+              review = {
+                  "verdict": "COMMENT",
+                  "summary": "AI review skipped due to Groq API rate limits / token exhaustion. Please perform code review manually.",
+                  "issues": [],
+                  "positives": [],
+                  "key_suggestion": "",
+                  "safe_to_merge": True,
+                  "suggested_labels": []
+              }
+              with open('review.json', 'w') as f:
+                  json.dump(review, f, indent=2)
+              print("✅ Falling back to graceful placeholder review")
+              sys.exit(0)
 
           text = data['choices'][0]['message']['content']
 

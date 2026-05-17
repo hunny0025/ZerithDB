@@ -49,3 +49,49 @@ export interface SyncPlugin {
     update: Uint8Array
   ) => Uint8Array | null | Promise<Uint8Array | null>;
 }
+
+/** Ephemeral Presence state for a peer. */
+export interface EphemeralPeerState<
+  TState extends Record<string, unknown> = Record<string, unknown>,
+> {
+  peerId: string;
+  state: TState;
+  sequence: number;
+  updatedAt: number;
+}
+
+export interface MediaStreamTrackMetadata {
+  trackId: string;
+  kind: "audio" | "video";
+  label: string;
+  enabled: boolean;
+  muted: boolean;
+  readyState: string;
+}
+
+export interface MediaStreamMetadata {
+  streamId: string;
+  peerId: string;
+  kind: "camera" | "screen" | "custom";
+  audioMuted: boolean;
+  videoMuted: boolean;
+  tracks: MediaStreamTrackMetadata[];
+  updatedAt: number;
+}
+
+export interface ActiveSpeakerState {
+  peerId: string;
+  audioLevel?: number;
+  updatedAt: number;
+}
+
+export interface VideoParticipantState {
+  peerId: string;
+  muted: {
+    audio: boolean;
+    video: boolean;
+  };
+  streams: Record<string, MediaStreamMetadata>;
+  activeSpeaker?: ActiveSpeakerState;
+  updatedAt: number;
+}
