@@ -1,45 +1,59 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with
-[`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ZerithDB Web
+
+This is the Next.js web app for ZerithDB.
 
 ## Getting Started
 
 First, run the development server:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
 pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the
-file.
+You can start editing the page by modifying `src/app/page.tsx`. The page auto-updates as you edit
+the file.
 
-This project uses
-[`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to
-automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Offline App Shell
 
-## Learn More
+The production build registers `public/sw.js` as an offline-first service worker template. It
+pre-caches the required app shell files, opportunistically warms common routes and public assets,
+then serves `public/offline.html` when a navigation request cannot reach the network.
 
-To learn more about Next.js, take a look at the following resources:
+The service worker is intentionally registered only in production so local development does not get
+stuck behind stale cached bundles. To test it locally:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm build
+pnpm start
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback
-and contributions are welcome!
+Open the app, wait for the service worker to register, then use DevTools to switch the browser to
+offline mode and reload a cached route. If you need to clear an old worker, use DevTools >
+Application > Service Workers > Unregister.
 
-## Deploy on Vercel
+The required app shell cache includes:
 
-The easiest way to deploy your Next.js app is to use the
-[Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme)
-from the creators of Next.js.
+- `/`
+- `/offline.html`
 
-Check out our
-[Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying)
-for more details.
+If either required shell file fails to cache, installation fails so the browser does not keep a
+partially prepared offline worker.
+
+The optional warm cache includes:
+
+- `/docs`
+- `/playground`
+- `/blog`
+- shared public assets such as `/logo.svg`, `/favicon.ico`, and `/manifest.webmanifest`
+
+Update `REQUIRED_APP_SHELL_URLS` in `public/sw.js` whenever a route or shell asset must be available
+offline. Add non-critical routes and assets to `OPTIONAL_APP_SHELL_URLS` so a missing optional page
+does not block service worker installation.
+
+Runtime caching is intentionally bounded. Static assets and allowed app navigations share a capped
+runtime cache, and navigation responses are only stored for known routes without query strings or
+`no-store` cache-control headers. The worker also waits for the normal browser update cycle instead
+of calling `skipWaiting()` or `clients.claim()`, which helps avoid taking over pages that still
+reference chunks from a previous Next.js build.

@@ -1,0 +1,175 @@
+name: 📋 CI Failure Reporter
+
+# When CI fails on a PR, post a structured comment explaining exactly what
+# broke and what the contributor needs to fix — all under the maintainer account.
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+
+jobs:
+  report-failure:
+    name: Report CI Failure
+    runs-on: ubuntu-latest
+    # Only run when CI actually failed
+    if: github.event.workflow_run.conclusion == 'failure'
+    steps:
+      - name: Find associated PR and report failure
+        run: |
+          python3 << 'PYEOF'
+          import json, subprocess, os, sys, urllib.request
+
+          repo      = os.environ['GITHUB_REPOSITORY']
+          run_id    = os.environ['WORKFLOW_RUN_ID']
+          head_sha  = os.environ['HEAD_SHA']
+          head_branch = os.environ['HEAD_BRANCH']
+          run_url   = os.environ['RUN_URL']
+          token     = os.environ['GH_TOKEN']
+
+          print(f"CI failed on run {run_id} | sha={head_sha[:8]} | branch={head_branch}")
+
+          # ── Find the PR associated with this workflow run ─────────────────
+          result = subprocess.run(
+              [
+                  'gh', 'pr', 'list',
+                  '--repo', repo,
+                  '--state', 'open',
+                  '--json', 'number,title,headRefName,headRepository',
+                  '--limit', '100',
+              ],
+              capture_output=True, text=True
+          )
+          if result.returncode != 0:
+              print(f"Could not list PRs: {result.stderr}", file=sys.stderr)
+              sys.exit(0)
+
+          prs = json.loads(result.stdout)
+          target_pr = None
+          for pr in prs:
+              if pr.get('headRefName') == head_branch:
+                  target_pr = pr
+                  break
+
+          if not target_pr:
+              print(f"No open PR found for branch '{head_branch}' — skipping comment")
+              sys.exit(0)
+
+          pr_number = target_pr['number']
+          pr_title  = target_pr['title']
+          print(f"Found PR #{pr_number}: {pr_title}")
+
+          # ── Fetch failed jobs for this run ────────────────────────────────
+          api_url = f"https://api.github.com/repos/{repo}/actions/runs/{run_id}/jobs"
+          req = urllib.request.Request(
+              api_url,
+              headers={
+                  "Authorization": f"Bearer {token}",
+                  "Accept": "application/vnd.github.v3+json",
+              }
+          )
+          try:
+              with urllib.request.urlopen(req, timeout=15) as resp:
+                  jobs_data = json.load(resp)
+          except Exception as e:
+              print(f"Could not fetch jobs: {e}", file=sys.stderr)
+              jobs_data = {"jobs": []}
+
+          jobs      = jobs_data.get('jobs', [])
+          failed    = [j for j in jobs if j.get('conclusion') == 'failure']
+          passed    = [j for j in jobs if j.get('conclusion') == 'success']
+          skipped   = [j for j in jobs if j.get('conclusion') == 'skipped']
+
+          # ── Build a helpful failure comment ───────────────────────────────
+          lines = [
+              "## ❌ CI Failed",
+              "",
+              f"The CI pipeline failed on your latest push. Here's what needs attention:",
+              "",
+          ]
+
+          if failed:
+              lines.append("### 🔴 Failed Jobs")
+              lines.append("")
+              for job in failed:
+                  job_name = job.get('name', 'Unknown')
+                  job_url  = job.get('html_url', run_url)
+
+                  # Get failed steps
+                  steps = job.get('steps', [])
+                  failed_steps = [s for s in steps if s.get('conclusion') == 'failure']
+
+                  lines.append(f"**[{job_name}]({job_url})**")
+                  for step in failed_steps:
+                      lines.append(f"- Failed step: `{step.get('name', '?')}`")
+                  lines.append("")
+
+          # ── Common fix hints based on job names ───────────────────────────
+          failed_names = {j.get('name', '') for j in failed}
+
+          hints = []
+          if any('Lint' in n or 'Format' in n for n in failed_names):
+              hints.append("**Lint/Format:** Run `pnpm turbo lint` and `pnpm format` locally to fix errors")
+          if any('TypeCheck' in n or 'Type' in n for n in failed_names):
+              hints.append("**TypeCheck:** Run `pnpm turbo typecheck` to see all type errors")
+          if any('Build' in n or 'Test' in n for n in failed_names):
+              hints.append("**Build/Test:** Run `pnpm turbo build test` to reproduce locally")
+          if any('Python' in n for n in failed_names):
+              hints.append("**Python SDK:** Run `cd packages/zerithdb-python && pytest --tb=short -q` locally")
+          if any('lockfile' in n.lower() or 'install' in n.lower() for n in failed_names):
+              hints.append("**Lockfile:** Run `pnpm install` and commit the updated `pnpm-lock.yaml`")
+
+          if hints:
+              lines += ["### 💡 Quick Fix Guide", ""]
+              lines += [f"- {h}" for h in hints]
+              lines.append("")
+
+          if passed:
+              pass_names = [j.get('name', '?') for j in passed]
+              lines += [
+                  "### ✅ Passed Jobs",
+                  "",
+                  ", ".join(f"`{n}`" for n in pass_names),
+                  "",
+              ]
+
+          lines += [
+              "---",
+              f"📎 [View full CI logs]({run_url})",
+              "",
+              "_🤖 Automated CI report · ZerithDB pipeline_",
+          ]
+
+          body = "\n".join(lines)
+
+          # Check if we already posted a failure comment for this SHA to avoid spam
+          existing = subprocess.run(
+              ['gh', 'pr', 'view', str(pr_number), '--repo', repo,
+               '--json', 'comments', '--jq', '.comments[-1].body'],
+              capture_output=True, text=True
+          )
+          last_comment = existing.stdout.strip()
+          if '❌ CI Failed' in last_comment and run_url[:50] in last_comment:
+              print("Already posted failure comment for this run — skipping")
+              sys.exit(0)
+
+          post = subprocess.run(
+              ['gh', 'pr', 'comment', str(pr_number), '--repo', repo, '--body', body],
+              capture_output=True, text=True
+          )
+          if post.returncode == 0:
+              print(f"✅ Failure report posted to PR #{pr_number}")
+          else:
+              print(f"Comment error: {post.stderr}", file=sys.stderr)
+          PYEOF
+        env:
+          GH_TOKEN:          ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          WORKFLOW_RUN_ID:   ${{ github.event.workflow_run.id }}
+          HEAD_SHA:          ${{ github.event.workflow_run.head_sha }}
+          HEAD_BRANCH:       ${{ github.event.workflow_run.head_branch }}
+          RUN_URL:           ${{ github.event.workflow_run.html_url }}

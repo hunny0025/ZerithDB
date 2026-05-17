@@ -1,27 +1,118 @@
----
-name: "✨ Feature Request"
-about: "Suggest a new feature or improvement"
-labels: ["enhancement"]
----
+name: "🚀 Feature Request"
+description: Suggest a new feature or enhancement for ZerithDB
+title: "[Feature]: "
+labels: ["enhancement", "needs-discussion"]
+assignees: []
 
-## Problem Statement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea that would make ZerithDB better? We'd love to hear it!
+        Please fill out the sections below to help us understand your proposal clearly.
 
-<!-- What problem does this solve? Describe the pain point. -->
+  - type: textarea
+    id: problem-statement
+    attributes:
+      label: 🧩 Problem Statement
+      description: |
+        What problem are you trying to solve? Describe the current limitation or gap.
+        A good problem statement focuses on the *why*, not the *what*.
+      placeholder: |
+        As a ZerithDB user, I find it difficult to... because...
+        Currently there is no way to... which means I have to...
+    validations:
+      required: true
 
-## Proposed Solution
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: 💡 Proposed Solution
+      description: Describe the feature or change you'd like to see. Be as specific as possible.
+      placeholder: |
+        I'd like a new API method / config option / CLI command that...
+        It should behave like... and accept the following parameters...
+    validations:
+      required: true
 
-<!-- What should ZerithDB do? Be specific. -->
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: 🎯 Use Cases
+      description: |
+        Describe a real-world scenario where this feature would be useful.
+        Explain who benefits from it and how it improves their workflow.
+      placeholder: |
+        As a developer, I want to...
+        This would help because...
+    validations:
+      required: true
 
-## API Design (if applicable)
+  - type: textarea
+    id: api-design
+    attributes:
+      label: 🛠️ API Design (if applicable)
+      description: What would the ideal API look like?
+      placeholder: |
+        ```typescript
+        // example code
+        ```
+    validations:
+      required: false
 
-```typescript
-// What would the ideal API look like?
-```
+  - type: textarea
+    id: alternatives-considered
+    attributes:
+      label: 🔄 Alternatives Considered
+      description: |
+        Have you considered any workarounds or alternative approaches?
+        Explaining what you've already tried helps us understand the design space.
+      placeholder: |
+        I tried using... but it doesn't work because...
+        Another approach could be... but the downside is...
+    validations:
+      required: true
 
-## Alternatives Considered
+  - type: dropdown
+    id: priority
+    attributes:
+      label: 📊 Priority / Impact
+      description: How important is this feature to your workflow?
+      options:
+        - "🔴 Critical — blocking my use of ZerithDB"
+        - "🟠 High — significantly impacts my productivity"
+        - "🟡 Medium — would be a nice improvement"
+        - "🟢 Low — minor convenience / nice to have"
+    validations:
+      required: true
 
-<!-- What other approaches did you consider? Why are they insufficient? -->
+  - type: dropdown
+    id: contribution
+    attributes:
+      label: 🙋 Willing to Contribute?
+      description: Are you interested in implementing this feature yourself?
+      options:
+        - "Yes — I'd like to submit a pull request"
+        - "Maybe — I'd need some guidance"
+        - "No — I'm just suggesting the idea"
+    validations:
+      required: true
 
-## Additional Context
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: 📎 Additional Context
+      description: Add any other context, mockups, links to similar features in other projects, or references that support this request.
+      placeholder: Links, screenshots, diagrams, related issues...
+    validations:
+      required: false
 
-<!-- Links, references, prior art, etc. -->
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: ✔️ Checklist
+      options:
+        - label: I have searched existing issues and discussions to make sure this feature has not already been requested.
+          required: true
+        - label: I have clearly described the problem this feature solves, not just the solution.
+          required: true

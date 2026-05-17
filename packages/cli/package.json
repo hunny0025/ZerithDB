@@ -11,11 +11,11 @@
     "build": "tsup src/cli.ts --format esm",
     "dev": "tsup src/cli.ts --format esm --watch",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
     "lint": "eslint src --ext .ts",
     "clean": "rimraf dist"
   },
   "dependencies": {
-    "zerithdb-core": "workspace:*",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
     "execa": "^9.3.1",

@@ -1,0 +1,138 @@
+name: 🔀 Auto Merge
+
+# Fires when a PR review is submitted OR when CI checks complete.
+# Merges automatically if: all required checks pass + at least 1 approval
+# + no "do-not-merge" label + PR targets main or dev.
+on:
+  pull_request_review:
+    types: [submitted]
+  # Re-evaluate after every workflow completes (catches CI going green)
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    name: Auto-merge eligible PRs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find and merge eligible PRs
+        run: |
+          python3 << 'PYEOF'
+          import json, subprocess, os, sys
+
+          repo = os.environ['GITHUB_REPOSITORY']
+
+          # ── Fetch all open PRs targeting main or dev ──────────────────────
+          result = subprocess.run(
+              [
+                  'gh', 'pr', 'list',
+                  '--repo', repo,
+                  '--state', 'open',
+                  '--base', 'main',
+                  '--limit', '50',
+                  '--json', 'number,title,headRefName,labels,reviews,statusCheckRollup,author,mergeable',
+              ],
+              capture_output=True, text=True
+          )
+          if result.returncode != 0:
+              print(f"gh pr list error: {result.stderr}", file=sys.stderr)
+              sys.exit(1)
+
+          prs = json.loads(result.stdout)
+          print(f"Found {len(prs)} open PRs targeting main")
+
+          BLOCK_LABELS = {'do-not-merge', 'no-auto-merge', 'wip', 'draft',
+                          'status: needs-triage', 'needs-triage'}
+
+          for pr in prs:
+              number  = pr['number']
+              title   = pr['title']
+              labels  = {l['name'] for l in pr.get('labels', [])}
+              checks  = pr.get('statusCheckRollup', []) or []
+              reviews = pr.get('reviews', []) or []
+              mergeable = pr.get('mergeable', '')
+
+              print(f"\n── PR #{number}: {title[:60]}")
+
+              # 1. Block labels
+              blocked = labels & BLOCK_LABELS
+              if blocked:
+                  print(f"   ⏭  Skipping — blocked label(s): {blocked}")
+                  continue
+
+              # 2. Mergeable state
+              if mergeable == 'CONFLICTING':
+                  print(f"   ⏭  Skipping — has merge conflicts")
+                  continue
+
+              # 3. All required CI checks must have passed
+              if not checks:
+                  print(f"   ⏭  Skipping — no status checks recorded yet")
+                  continue
+
+              failed  = [c for c in checks if c.get('conclusion') in ('FAILURE', 'TIMED_OUT', 'ERROR', 'CANCELLED')]
+              pending = [c for c in checks if c.get('status') in ('IN_PROGRESS', 'QUEUED', 'WAITING') or c.get('conclusion') is None]
+
+              if failed:
+                  names = [c.get('name', '?') for c in failed]
+                  print(f"   ❌ Skipping — {len(failed)} failing check(s): {names}")
+                  continue
+
+              if pending:
+                  names = [c.get('name', '?') for c in pending]
+                  print(f"   ⏳ Skipping — {len(pending)} pending check(s): {names}")
+                  continue
+
+              # 4. At least one APPROVED review, no outstanding CHANGES_REQUESTED
+              approved           = [r for r in reviews if r.get('state') == 'APPROVED']
+              changes_requested  = [r for r in reviews if r.get('state') == 'CHANGES_REQUESTED']
+
+              if changes_requested:
+                  reviewers = [r.get('author', {}).get('login', '?') for r in changes_requested]
+                  print(f"   ⏭  Skipping — changes requested by: {reviewers}")
+                  continue
+
+              if not approved:
+                  print(f"   ⏭  Skipping — no approvals yet")
+                  continue
+
+              approvers = [r.get('author', {}).get('login', '?') for r in approved]
+              print(f"   ✅ All checks passed | Approved by: {approvers}")
+              print(f"   🔀 Merging PR #{number}...")
+
+              merge_result = subprocess.run(
+                  [
+                      'gh', 'pr', 'merge', str(number),
+                      '--repo', repo,
+                      '--squash',
+                      '--delete-branch',
+                      '--subject', f'{title} (#{number})',
+                  ],
+                  capture_output=True, text=True
+              )
+
+              if merge_result.returncode == 0:
+                  print(f"   🎉 PR #{number} merged successfully!")
+
+                  # Post a merge confirmation comment
+                  comment = (
+                      f"🎉 **Auto-merged!** All CI checks passed and the PR was approved.\n\n"
+                      f"_Merged automatically by the ZerithDB automation pipeline._"
+                  )
+                  subprocess.run(
+                      ['gh', 'pr', 'comment', str(number), '--repo', repo, '--body', comment],
+                      capture_output=True, text=True
+                  )
+              else:
+                  print(f"   ⚠️  Merge failed: {merge_result.stderr}")
+
+          print("\n✅ Auto-merge scan complete")
+          PYEOF
+        env:
+          GH_TOKEN:          ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}

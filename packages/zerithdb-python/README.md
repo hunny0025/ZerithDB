@@ -67,3 +67,9 @@ if __name__ == "__main__":
 - Uses `aiortc` for WebRTC connections and data channels.
 - Uses `websockets` for the initial signaling phase.
 - Communicates using the standard ZerithDB CRDT sync protocol.
+
+## Troubleshooting
+
+Having trouble installing? Common issues (like `Failed to build aiortc` due to missing `ffmpeg`) are
+documented in the **[TROUBLESHOOTING.md](./TROUBLESHOOTING.md)** guide, with step-by-step fixes for
+Windows, macOS and Linux.

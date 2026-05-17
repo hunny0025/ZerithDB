@@ -1,0 +1,23 @@
+{
+  "name": "zerithdb-audit",
+  "version": "0.1.0",
+  "description": "CRDT-based tamper-evident audit log for ZerithDB",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "dev": "tsup src/index.ts --watch",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "yjs": "^13.6.18",
+    "zerithdb-auth": "workspace:*",
+    "zerithdb-core": "workspace:*"
+  },
+  "devDependencies": {
+    "happy-dom": "^20.9.0",
+    "tsup": "^8.0.2",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

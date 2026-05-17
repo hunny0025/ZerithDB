@@ -1,0 +1,26 @@
+[
+  {
+    "_firebaseKey": "-Mabc1",
+    "title": "Getting Started with ZerithDB",
+    "body": "ZerithDB is a local-first database...",
+    "author": "-Mxyz1",
+    "tags": ["tutorial", "database", "local-first"],
+    "metadata": {
+      "views": 142,
+      "likes": 23,
+      "published": true
+    }
+  },
+  {
+    "_firebaseKey": "-Mabc2",
+    "title": "Migrating from Firebase",
+    "body": "This guide covers the migration process...",
+    "author": "-Mxyz2",
+    "tags": ["migration", "firebase"],
+    "metadata": {
+      "views": 89,
+      "likes": 12,
+      "published": false
+    }
+  }
+]

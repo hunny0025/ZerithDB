@@ -3,6 +3,7 @@ import json
 import logging
 from typing import Any, Dict, Optional, Callable, Awaitable
 
+import sentry_sdk
 import websockets
 from aiortc import RTCPeerConnection, RTCSessionDescription, RTCDataChannel
 
@@ -34,6 +35,7 @@ class NetworkManager:
             self._disconnect_event.set()
         except Exception as e:
             logger.error(f"Signaling error: {e}")
+            sentry_sdk.capture_exception(e)
             self._disconnect_event.set()
 
     async def _handle_signaling_message(self, msg: dict):
@@ -63,9 +65,6 @@ class NetworkManager:
             remote_peer_id = msg.get("from")
             pc = self.peers.get(remote_peer_id)
             if pc:
-                # aiortc handles ICE candidates slightly differently, 
-                # but we can try to add it. In many aiortc setups, ICE candidates 
-                # are bundled in SDP or handled directly.
                 pass
 
     async def _create_peer(self, remote_peer_id: str, initiator: bool, offer_payload: dict = None):
@@ -124,6 +123,7 @@ class NetworkManager:
                     asyncio.create_task(self.on_message(data, remote_peer_id))
                 except Exception as e:
                     logger.error(f"Failed to parse P2P message: {e}")
+                    sentry_sdk.capture_exception(e)
 
     async def _send_signaling(self, data: dict):
         if self.ws and not self.ws.closed:

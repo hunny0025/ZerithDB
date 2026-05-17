@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussions & Questions
+    url: https://github.com/Zerith-Labs/ZerithDB/discussions
+    about: For general questions, ideas, or help — use GitHub Discussions instead of opening an issue.
+  - name: 📖 Documentation
+    url: https://github.com/Zerith-Labs/ZerithDB#readme
+    about: Check the README and docs before opening an issue.

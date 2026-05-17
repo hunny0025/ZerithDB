@@ -38,7 +38,13 @@ export function hexToBytes(hex: string): Uint8Array {
 
 /** Encode Uint8Array to base64 string */
 export function bytesToBase64(bytes: Uint8Array): string {
-  return btoa(String.fromCharCode(...bytes));
+  // Use chunking to avoid call stack overflow on large arrays (>~100KB)
+  const CHUNK_SIZE = 0x4000; // 16KB
+  let binary = "";
+  for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK_SIZE));
+  }
+  return btoa(binary);
 }
 
 /** Decode base64 string to Uint8Array */

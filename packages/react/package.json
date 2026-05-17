@@ -21,6 +21,7 @@
     "clean": "rimraf dist"
   },
   "dependencies": {
+    "dexie": "^4.0.8",
     "zerithdb-sdk": "workspace:*"
   },
   "peerDependencies": {
