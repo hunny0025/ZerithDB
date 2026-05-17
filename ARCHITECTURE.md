@@ -143,6 +143,7 @@ to/from the network layer.
 - **Awareness** — Ephemeral user presence (cursor position, online status) via Yjs Awareness
   protocol — never persisted.
 - **Persistence** — On sync, the Yjs state vector is checkpointed to IndexedDB (via `zerithdb-db`).
+- **Delta Deduplication** - Identical updates are tracked and skipped before syncing data , so the same data is never sent to        peers more than once thereby avoiding redundant data movement.In this approach , only those fields that are updated recently       called delta are sent to peers instead of whole object.
 
 **Sync flow:**
 

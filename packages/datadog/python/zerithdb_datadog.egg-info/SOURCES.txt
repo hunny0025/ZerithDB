@@ -1,0 +1,8 @@
+setup.py
+zerithdb_datadog/__init__.py
+zerithdb_datadog/formatter.py
+zerithdb_datadog/handler.py
+zerithdb_datadog.egg-info/PKG-INFO
+zerithdb_datadog.egg-info/SOURCES.txt
+zerithdb_datadog.egg-info/dependency_links.txt
+zerithdb_datadog.egg-info/top_level.txt

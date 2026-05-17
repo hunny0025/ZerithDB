@@ -115,7 +115,7 @@ const SIDEBAR_LINKS = [
   {
     category: "Platform",
     icon: Server,
-    items: ["Signaling Servers", "TURN / STUN Relays", "Pricing", "Enterprise"],
+    items: ["Signaling Servers", "TURN / STUN Relays", "Troubleshooting", "Pricing", "Enterprise"],
   },
 ];
 
@@ -225,6 +225,91 @@ const DOC_CONTENT: Record<string, React.ReactNode> = {
       </p>
     </div>
   ),
+  Troubleshooting: (
+    <div className="space-y-6 text-gray-600 leading-relaxed text-lg">
+      <p>
+        Because ZerithDB is a local-first application platform operating entirely in the browser, it
+        avoids traditional centralized server bottlenecks by forming a resilient, encrypted mesh
+        network among peers. This decentralized synchronization relies heavily on browser-level
+        WebRTC connections orchestrated initially via a minimal signaling server.
+      </p>
+      <p>
+        However, real-world network configurations (firewalls, asymmetric NATs, and strict browser
+        sandboxing) can occasionally prevent peers from handshaking or maintaining active data
+        streams. Use this guide to diagnose and resolve common connectivity issues.
+      </p>
+
+      <h3
+        id="webrtc-nat-issue"
+        className="text-2xl font-bold text-gray-900 mt-12 mb-4 scroll-mt-20"
+      >
+        1. Initial Connection Fails Between Peers on Different Networks
+      </h3>
+      <ul className="list-disc pl-6 space-y-3">
+        <li>
+          <strong>Symptom:</strong> Peers on the same Wi-Fi network sync instantly, but a peer on a
+          home network cannot connect to a peer on a corporate network or cellular data.
+        </li>
+        <li>
+          <strong>Cause:</strong> This is typically caused by a NAT (Network Address Translation) or
+          firewall restriction blocking direct P2P socket discovery. While simple STUN mapping
+          handles basic routers, strict enterprise or symmetric NATs hide the internal IP/Port
+          mapping dynamically, preventing direct connections via standard ICE candidates.
+        </li>
+        <li>
+          <strong>Solution:</strong> You need a TURN (Traversal Using Relays around NAT) server to
+          safely fallback and relay encrypted traffic between strict networks. Configure your
+          initialization to supply custom ICE servers:
+        </li>
+      </ul>
+
+      <div className="rounded-xl border border-gray-200 overflow-hidden shadow-sm group mt-6">
+        <div className="bg-gray-50 border-b border-gray-200 px-4 py-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs font-mono text-gray-500">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-400"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400"></span>
+            <span className="w-2.5 h-2.5 rounded-full bg-green-400"></span>
+            <span className="ml-2 font-medium">app.config.ts</span>
+          </div>
+        </div>
+        <div className="p-6 bg-gray-900 overflow-x-auto">
+          <pre className="text-[13px] font-mono text-gray-300 leading-relaxed">
+            <code>
+              {`import { createApp } from "zerithdb-sdk";
+
+const app = createApp({
+  appId: "my-secure-app",
+  sync: {
+    signalingUrl: "wss://signal.zerithdb.dev",
+    // Supply explicit TURN/STUN configuration for restrictive firewalls
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      {
+        urls: "turn:your-custom-turn-server.com:3478",
+        username: "zerith_user",
+        credential: "secure_password_here"
+      }
+    ]
+  }
+});`}
+            </code>
+          </pre>
+        </div>
+      </div>
+
+      <h3
+        id="connection-drops"
+        className="text-2xl font-bold text-gray-900 mt-12 mb-4 scroll-mt-20"
+      >
+        2. Connection Drops After Inactivity
+      </h3>
+      <p>
+        Some aggressive NAT routers close UDP mappings if no data is exchanged for a short period
+        (usually 30-60 seconds). ZerithDB automatically sends keep-alive heartbeats, but you can
+        adjust the interval if you notice frequent reconnections on specific networks.
+      </p>
+    </div>
+  ),
 };
 
 export default function DocsPage() {
@@ -245,6 +330,13 @@ export default function DocsPage() {
     navigator.clipboard.writeText(text);
     setCopiedInstall(true);
     setTimeout(() => setCopiedInstall(false), 2000);
+  };
+
+  const slugify = (text: string) => {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-");
   };
 
   // Render specific content if available, otherwise generic text
@@ -275,7 +367,10 @@ export default function DocsPage() {
           </div>
 
           <div className="mb-12">
-            <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <h2
+              id="install-the-sdk"
+              className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2 scroll-mt-20"
+            >
               <Terminal className="w-5 h-5 text-gray-400" />
               Install the SDK
             </h2>
@@ -298,7 +393,12 @@ export default function DocsPage() {
           <div className="space-y-12">
             {activeFramework.steps.map((step, idx) => (
               <div key={idx} className="relative">
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{step.title}</h3>
+                <h3
+                  id={slugify(step.title)}
+                  className="text-lg font-bold text-gray-900 mb-2 scroll-mt-20"
+                >
+                  {step.title}
+                </h3>
                 <p className="text-gray-600 mb-4">{step.description}</p>
 
                 <div className="rounded-xl border border-gray-200 overflow-hidden shadow-sm group">
@@ -331,7 +431,10 @@ export default function DocsPage() {
             ))}
           </div>
 
-          <div className="mt-16 p-8 bg-gradient-to-br from-gray-50 to-white rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden">
+          <div
+            id="next-steps"
+            className="mt-16 p-8 bg-gradient-to-br from-gray-50 to-white rounded-2xl border border-gray-200 shadow-sm relative overflow-hidden scroll-mt-20"
+          >
             <div className="absolute top-0 right-0 p-8 opacity-5 pointer-events-none">
               <Zap className="w-32 h-32" />
             </div>
@@ -496,7 +599,7 @@ export default function DocsPage() {
           </div>
         </aside>
 
-        <main className="flex-1 py-10 px-6 lg:px-16 overflow-y-auto">
+        <main className="flex-1 py-10 px-6 lg:px-16 overflow-y-auto scroll-smooth">
           <div className="max-w-4xl mx-auto">
             <div className="mb-4 flex items-center gap-2 text-sm font-medium text-gray-400">
               <span className="hover:text-gray-900 cursor-pointer">Docs</span>
@@ -504,7 +607,10 @@ export default function DocsPage() {
               <span className="text-gray-900">{activeSection}</span>
             </div>
 
-            <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">
+            <h1
+              id="overview"
+              className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight scroll-mt-20"
+            >
               {activeSection}
             </h1>
 
@@ -521,26 +627,52 @@ export default function DocsPage() {
             {activeSection === "Quickstart" ? (
               <>
                 <li>
-                  <a href="#" className="hover:text-blue-600 transition-colors">
+                  <a href="#overview" className="hover:text-blue-600 transition-colors">
+                    Overview
+                  </a>
+                </li>
+                <li>
+                  <a href="#install-the-sdk" className="hover:text-blue-600 transition-colors">
                     Install the SDK
                   </a>
                 </li>
                 {activeFramework.steps.map((step, idx) => (
                   <li key={idx}>
-                    <a href="#" className="hover:text-blue-600 transition-colors line-clamp-1">
+                    <a
+                      href={`#${slugify(step.title)}`}
+                      className="hover:text-blue-600 transition-colors line-clamp-1"
+                    >
                       {step.title}
                     </a>
                   </li>
                 ))}
                 <li>
-                  <a href="#" className="hover:text-blue-600 transition-colors">
+                  <a href="#next-steps" className="hover:text-blue-600 transition-colors">
                     Next Steps
+                  </a>
+                </li>
+              </>
+            ) : activeSection === "Troubleshooting" ? (
+              <>
+                <li>
+                  <a href="#overview" className="hover:text-blue-600 transition-colors">
+                    Overview
+                  </a>
+                </li>
+                <li>
+                  <a href="#webrtc-nat-issue" className="hover:text-blue-600 transition-colors">
+                    1. WebRTC & NAT Issues
+                  </a>
+                </li>
+                <li>
+                  <a href="#connection-drops" className="hover:text-blue-600 transition-colors">
+                    2. Connection Drops
                   </a>
                 </li>
               </>
             ) : (
               <li>
-                <a href="#" className="text-blue-600 transition-colors">
+                <a href="#overview" className="text-blue-600 transition-colors">
                   Overview
                 </a>
               </li>

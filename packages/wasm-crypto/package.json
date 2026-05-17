@@ -1,0 +1,24 @@
+{
+  "name": "zerithdb-wasm-crypto",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "asc assembly/index.ts --target release -O3 --runtime stub -o dist/sss.wasm && node scripts/inline-wasm.js && tsc",
+    "dev": "asc assembly/index.ts --target debug -o dist/sss.wasm",
+    "clean": "rimraf dist"
+  },
+  "devDependencies": {
+    "assemblyscript": "^0.27.29",
+    "typescript": "^5.5.4",
+    "rimraf": "^6.0.1"
+  }
+}

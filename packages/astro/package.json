@@ -1,0 +1,13 @@
+{
+  "name": "@zerithdb/astro",
+  "version": "0.1.0",
+  "description": "Astro integration for ZerithDB",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "peerDependencies": {
+    "astro": "^4.0.0"
+  },
+  "devDependencies": {
+    "astro": "^6.3.3"
+  }
+}

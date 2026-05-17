@@ -33,15 +33,19 @@
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts --treeshake",
     "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
+    "test": "vitest run --root ../.. --environment node packages/sdk/src/video-conference.test.ts",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
     "clean": "rimraf dist"
   },
   "dependencies": {
     "zerithdb-auth": "workspace:*",
     "zerithdb-core": "workspace:*",
     "zerithdb-db": "workspace:*",
+    "zerithdb-devtools": "workspace:*",
     "zerithdb-network": "workspace:*",
-    "zerithdb-sync": "workspace:*"
+    "zerithdb-sync": "workspace:*",
+    "zerithdb-errors": "workspace:*"
   },
   "devDependencies": {
     "zerithdb-eslint-config": "workspace:*",
@@ -51,6 +55,14 @@
     "tsup": "^8.2.4",
     "typescript": "^5.5.4",
     "vitest": "^2.0.5"
+  },
+  "peerDependencies": {
+    "zod": "^3.x"
+  },
+  "peerDependenciesMeta": {
+    "zod": {
+      "optional": true
+    }
   },
   "files": [
     "dist",

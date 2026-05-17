@@ -7,8 +7,10 @@ export type CollectionName = string;
 /** Base document shape. All stored documents have an `_id` field added automatically. */
 export type Document<T extends Record<string, any> = Record<string, any>> = T & {
   _id: DocumentId;
-  _createdAt: number; // Unix ms
-  _updatedAt: number; // Unix ms
+  /** Created-at timestamp in Unix milliseconds */
+  _createdAt: number;
+  /** Last-updated-at timestamp in Unix milliseconds */
+  _updatedAt: number;
 };
 
 /**

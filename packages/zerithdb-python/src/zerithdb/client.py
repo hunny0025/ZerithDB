@@ -1,3 +1,4 @@
+import sentry_sdk
 import logging
 import uuid
 from typing import Callable, Dict, Any, Awaitable
@@ -10,7 +11,7 @@ class ZerithClient:
     """
     A Python client for ZerithDB that joins a WebRTC P2P mesh network.
     """
-    def __init__(self, signaling_url: str = "wss://arpitkhandelwal810-zerith-signaling.hf.space"):
+    def __init__(self, signaling_url: str = "wss://arpitkhandelwal810-zerith-signaling.hf.space", sentry_dsn: str = None):
         self.signaling_url = signaling_url
         self.peer_id = str(uuid.uuid4())
         self.network = NetworkManager(self.signaling_url, self.peer_id)
@@ -19,6 +20,9 @@ class ZerithClient:
         
         # Setup network callbacks
         self.network.on_message = self._handle_network_message
+        if sentry_dsn:
+           sentry_sdk.init(dsn=sentry_dsn, traces_sample_rate=1.0)
+           logger.info("Sentry crash reporting enabled.")
 
     async def connect(self, room_id: str):
         """Connect to the signaling server and join the room."""

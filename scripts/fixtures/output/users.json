@@ -1,0 +1,20 @@
+[
+  {
+    "_firebaseKey": "-Mxyz1",
+    "name": "Alice",
+    "email": "alice@example.com",
+    "age": 30
+  },
+  {
+    "_firebaseKey": "-Mxyz2",
+    "name": "Bob",
+    "email": "bob@example.com",
+    "age": 25
+  },
+  {
+    "_firebaseKey": "-Mxyz3",
+    "name": "Charlie",
+    "email": "charlie@example.com",
+    "age": 35
+  }
+]

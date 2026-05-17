@@ -6,6 +6,12 @@ import type { ZerithDBConfig } from "../../packages/core/src/index.js";
 
 // MockWebSocket mimics the signaling WebSocket in-memory
 class MockWebSocket extends EventEmitter {
+  // Standard WebSocket ready state constants (required by WebSocketTransport)
+  public static readonly CONNECTING = 0;
+  public static readonly OPEN = 1;
+  public static readonly CLOSING = 2;
+  public static readonly CLOSED = 3;
+
   public readyState = 0; // CONNECTING
   public url: string;
   public peerId: string = "";
@@ -27,8 +33,11 @@ class MockWebSocket extends EventEmitter {
     setTimeout(() => {
       this.readyState = 1; // OPEN
       if (this.onopen) this.onopen();
+    }, 5);
 
-      // Send the list of existing peers in the room
+    // peer-list is sent after a short delay AFTER open, so that
+    // WebSocketTransport.attachTransport() has time to register onMessage handler
+    setTimeout(() => {
       const existingPeers = Array.from(MockWebSocket.clients.values())
         .filter((c) => c.roomId === this.roomId && c.peerId !== this.peerId)
         .map((c) => c.peerId);
@@ -42,7 +51,7 @@ class MockWebSocket extends EventEmitter {
       if (this.onmessage) {
         this.onmessage({ data: JSON.stringify(peerListMsg) } as any);
       }
-    }, 5);
+    }, 20);
   }
 
   public onopen: (() => void) | null = null;

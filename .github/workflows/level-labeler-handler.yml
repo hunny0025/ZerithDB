@@ -1,0 +1,92 @@
+name: Level Labeler Handler
+
+on:
+  workflow_run:
+    workflows: ["Level Labeler Trigger"]
+    types: [completed]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  apply-level:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for artifact
+        id: check_artifact
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: artifacts } = await github.rest.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.payload.workflow_run.id,
+            });
+            const hasArtifact = artifacts.artifacts.some(a => a.name === 'level-info');
+            core.setOutput('exists', hasArtifact);
+            console.log(`Artifact "level-info" exists: ${hasArtifact}`);
+
+      - name: Download level info
+        if: steps.check_artifact.outputs.exists == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: level-info
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Level Label
+        if: steps.check_artifact.outputs.exists == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            if (!fs.existsSync('number.txt') || !fs.existsSync('level.txt')) {
+              console.log('Required info files not found in artifact.');
+              return;
+            }
+
+            const targetNumber = parseInt(fs.readFileSync('number.txt', 'utf8').trim());
+            const newLevel = fs.readFileSync('level.txt', 'utf8').trim();
+            const { owner, repo } = context.repo;
+
+            console.log(`Targeting Issue/PR #${targetNumber} with new level: ${newLevel}`);
+
+            const { data: currentLabels } = await github.rest.issues.listLabelsOnIssue({
+              owner,
+              repo,
+              issue_number: targetNumber,
+            });
+
+            const levelLabels = currentLabels
+              .map(l => l.name)
+              .filter(name => name.startsWith('level:'));
+
+            for (const label of levelLabels) {
+              if (label !== newLevel) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner,
+                    repo,
+                    issue_number: targetNumber,
+                    name: label,
+                  });
+                  console.log(`Removed old level label: ${label}`);
+                } catch (e) {
+                  console.log(`Failed to remove label ${label}: ${e.message}`);
+                }
+              }
+            }
+
+            if (!levelLabels.includes(newLevel)) {
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: targetNumber,
+                labels: [newLevel],
+              });
+              console.log(`Added new level label: ${newLevel}`);
+            } else {
+              console.log(`Label ${newLevel} is already present.`);
+            }

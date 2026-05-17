@@ -4,6 +4,7 @@ import ora from "ora";
 import chalk from "chalk";
 import { execa } from "execa";
 import prompts from "prompts";
+import { writeFile } from "../utils/writeFile.js";
 
 const TEMPLATES: Record<string, string> = {
   todo: "todo-app",
@@ -50,6 +51,7 @@ export async function initCommand(
       initial: "my-zerithdb-app",
       validate: (v: string) => getAppNameValidationError(v) ?? true,
     });
+
     appName = response.appName as string;
   }
 
@@ -60,6 +62,7 @@ export async function initCommand(
 
   // ── Step 2: Template selection ────────────────────────────────────────────
   let template = options.template;
+
   if (!(template in TEMPLATES)) {
     const response = await prompts({
       type: "select",
@@ -72,32 +75,52 @@ export async function initCommand(
         { title: "📦  Blank", value: "blank" },
       ],
     });
+
     template = response.template as string;
   }
 
   const targetDir = path.resolve(process.cwd(), appName);
 
   // ── Step 3: Scaffold ───────────────────────────────────────────────────────
-  const spinner = ora(`Creating ${chalk.cyan(appName)}...`).start();
+  const spinner = ora().start();
 
   try {
+    spinner.text = `Creating project directory for ${chalk.cyan(appName)}...`;
     await fs.mkdir(targetDir, { recursive: true });
+
+    spinner.text = "Generating starter application files...";
     await scaffoldTemplate(targetDir, appName, template);
-    spinner.succeed(`Created ${chalk.cyan(appName)}`);
+
+    spinner.succeed(`Created ${chalk.cyan(appName)} successfully`);
   } catch (err) {
-    spinner.fail("Scaffold failed");
-    console.error(err);
+    spinner.fail("Project scaffolding failed");
+
+    // Cleanup: remove the directory if it's mostly empty (failed halfway)
+    try {
+      const files = await fs.readdir(targetDir);
+      if (files.length < 3) {
+        await fs.rm(targetDir, { recursive: true, force: true });
+        console.log(chalk.gray("Cleaned up incomplete project directory."));
+      }
+    } catch {
+      // Ignore cleanup errors
+    }
+
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(chalk.red(`Error: ${message}`));
     process.exit(1);
   }
 
   // ── Step 4: Install ────────────────────────────────────────────────────────
   if (options.install) {
-    const installSpinner = ora("Installing dependencies...").start();
+    const installSpinner = ora("Installing project dependencies...").start();
+
     try {
       await execa("npm", ["install"], { cwd: targetDir });
-      installSpinner.succeed("Dependencies installed");
+
+      installSpinner.succeed("Dependencies installed successfully");
     } catch {
-      installSpinner.warn("Failed to install dependencies. Run `npm install` manually.");
+      installSpinner.warn("Dependency installation failed. Please run `npm install` manually.");
     }
   }
 
@@ -105,12 +128,16 @@ export async function initCommand(
   console.log(`
 ${chalk.green("✔")} ${chalk.bold("Your ZerithDB app is ready!")}
 
-  ${chalk.gray("Next steps:")}
-  ${chalk.cyan(`cd ${appName}`)}
-  ${chalk.cyan("npm run dev")}
+  ${chalk.gray("Get started:")}
+  ${chalk.cyan(`1. cd "${appName}"`)}
+  ${chalk.cyan("2. npm run dev")}
 
-${chalk.gray("Docs:")} https://zerithdb.dev/docs
-${chalk.gray("Discord:")} https://discord.gg/MhvuDvzWfF
+  ${chalk.gray("What's next:")}
+  - Open ${chalk.blue("src/app/page.tsx")} to see the ZerithDB SDK in action.
+  - Check out the ${chalk.blue("Live Playground")} at https://zerithdb.dev/playground
+  - Need help? Join our ${chalk.blue("Discord")}: https://discord.gg/MhvuDvzWfF
+
+  ${chalk.gray("Documentation:")} https://zerithdb.dev/docs
 `);
 }
 
@@ -142,20 +169,35 @@ async function scaffoldTemplate(
     },
   };
 
-  await fs.writeFile(path.join(targetDir, "package.json"), JSON.stringify(pkg, null, 2));
+  try {
+    await writeFile(targetDir, "package.json", JSON.stringify(pkg, null, 2));
 
-  // Write minimal app entry
-  const appDir = path.join(targetDir, "src", "app");
-  await fs.mkdir(appDir, { recursive: true });
+    let indexContent: string;
+    switch (template) {
+      case "todo":
+        indexContent = todoTemplate(appName);
+        break;
+      case "chat":
+        indexContent = chatTemplate(appName);
+        break;
+      case "notes":
+        indexContent = notesTemplate(appName);
+        break;
+      default:
+        indexContent = blankTemplate(appName);
+        break;
+    }
+    const layoutContent = layoutTemplate();
 
-  const indexContent = template === "todo" ? todoTemplate(appName) : blankTemplate(appName);
-  const layoutContent = layoutTemplate();
+    await writeFile(targetDir, "src/app/page.tsx", indexContent);
+    await writeFile(targetDir, "src/app/layout.tsx", layoutContent);
 
-  await fs.writeFile(path.join(appDir, "page.tsx"), indexContent);
-  await fs.writeFile(path.join(appDir, "layout.tsx"), layoutContent);
-
-  // .gitignore
-  await fs.writeFile(path.join(targetDir, ".gitignore"), "node_modules\n.next\ndist\n.env\n");
+    // .gitignore
+    await writeFile(targetDir, ".gitignore", "node_modules\n.next\ndist\n.env\n");
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    throw new Error(`Failed to write template files: ${message}`, { cause: err });
+  }
 }
 
 function layoutTemplate(): string {
@@ -185,6 +227,54 @@ app.sync.enable();
 
 export default function App() {
   return <div>Hello from ZerithDB! Edit src/App.tsx to get started.</div>;
+}
+`;
+}
+
+function chatTemplate(appName: string): string {
+  return `"use client";
+// ${appName} — ZerithDB Chat App
+// Generated by \`npx zerithdb init\`
+
+import { createApp } from "zerithdb-sdk";
+
+const app = createApp({
+  appId: "${appName}",
+});
+
+app.sync.enable();
+
+export default function App() {
+  return (
+    <div>
+      <h1>ZerithDB Chat</h1>
+      <p>Real-time P2P chat — no server required. Edit src/app/page.tsx to build your UI.</p>
+    </div>
+  );
+}
+`;
+}
+
+function notesTemplate(appName: string): string {
+  return `"use client";
+// ${appName} — ZerithDB Notes App
+// Generated by \`npx zerithdb init\`
+
+import { createApp } from "zerithdb-sdk";
+
+const app = createApp({
+  appId: "${appName}",
+});
+
+app.sync.enable();
+
+export default function App() {
+  return (
+    <div>
+      <h1>ZerithDB Notes</h1>
+      <p>Local-first, synced notes — no backend. Edit src/app/page.tsx to build your UI.</p>
+    </div>
+  );
 }
 `;
 }

@@ -18,12 +18,14 @@
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
     "clean": "rimraf dist"
   },
   "dependencies": {
     "zerithdb-auth": "workspace:*",
     "zerithdb-core": "workspace:*",
-    "simple-peer": "^9.11.1"
+    "simple-peer": "^9.11.1",
+    "zerithdb-errors": "workspace:*"
   },
   "devDependencies": {
     "zerithdb-eslint-config": "workspace:*",

@@ -36,6 +36,22 @@ your users' browsers form a resilient, encrypted mesh network.
 
 ---
 
+## Why ZerithDB?
+
+Traditional backend infrastructure is complex, expensive, and centralized. ZerithDB offers a
+different path:
+
+- **Infinite Scalability:** Your infrastructure scales with your users. Each new user adds computing
+  and storage power to the network.
+- **Zero Latency:** Data is read and written to a local database (IndexedDB) instantly. Sync happens
+  in the background.
+- **Privacy by Design:** Data is encrypted end-to-end. Since there's no central server, there's no
+  single point of failure or data breach.
+- **Development Speed:** Go from `npx zerithdb init` to a live, syncing app in minutes. Focus on
+  your UI, not your API.
+
+---
+
 ## The 30-Second Demo
 
 ```typescript
@@ -78,11 +94,16 @@ That's it. No `.env` files. No `docker-compose.yml`. No cloud accounts.
 
 ### Option 1: CLI (Recommended)
 
-```bash
-npx zerithdb@latest init my-app
-cd my-app
-npm run dev
-```
+If you're new here, follow these beginner friendly steps to get ZerithDB running on your machine:
+
+| Step | Action              | Command                           | What it does                            |
+| ---- | ------------------- | --------------------------------- | --------------------------------------- |
+| 1    | **Initialize**      | `npx zerithdb@latest init my-app` | Creates your project folder.            |
+| 2    | **Go to Directory** | `cd my-app`                       | Enters the folder you just created.     |
+| 3    | **Install**         | `npm install`                     | Gets all the tools needed for the app.  |
+| 4    | **Start App**       | `npm run dev`                     | Launches the app in your local browser. |
+
+> **Note:** You need [Node.js](https://nodejs.org/) installed to run these commands!
 
 ### Option 2: Manual Install
 
@@ -101,36 +122,97 @@ const app = createApp({
   appId: "my-app-unique-id", // namespaces your local DB
   sync: {
     signalingUrl: "wss://signal.zerithdb.dev", // optional: use our hosted relay
+    ephemeral: {
+      throttleMs: 0, // immediate mute/speaker/stream metadata updates
+    },
     // or: signalingUrl: "ws://localhost:4000"  // self-hosted
   },
 });
 ```
 
+### Local Cloud Backups
+
+```typescript
+import { createApp, GoogleDriveBackupTarget } from "zerithdb-sdk";
+
+const app = createApp({ appId: "my-app-unique-id" });
+
+const backup = app.backup(
+  new GoogleDriveBackupTarget({
+    accessToken: await getGoogleDriveAccessToken(),
+    folderId: "drive-folder-id",
+  }),
+  {
+    collections: ["todos", "settings"],
+    intervalMs: 30 * 60 * 1000,
+  }
+);
+
+backup.start();
+```
+
+The backup adapter periodically exports the selected IndexedDB collections as a JSON snapshot and
+uploads it through a cloud target. ZerithDB includes Google Drive and Dropbox targets; applications
+remain responsible for obtaining the provider access token through their own OAuth flow.
+
+---
+
+### P2P Video Calls
+
+```typescript
+const app = createApp({
+  appId: "standup-room",
+  sync: { signalingUrl: "wss://signal.zerithdb.dev" },
+});
+
+await app.network.connect("standup-room");
+
+const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+app.video.publishStream(stream, { kind: "camera", label: "Ariyan camera" });
+
+app.video.setMuted("audio", true);
+app.video.setActiveSpeaker(app.network.peerId);
+
+app.video.on("stream:added", ({ peerId, stream }) => {
+  console.log("remote stream", peerId, stream);
+});
+
+app.video.on("participant:updated", (participant) => {
+  console.log(participant.muted, participant.streams, participant.activeSpeaker);
+});
+```
+
+Media travels over the existing WebRTC mesh. Mute status, active speaker, and stream metadata use
+ZerithDB ephemeral sync, so they are broadcast immediately and never persisted.
+
 ---
 
 ## Architecture in One Diagram
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                      Your Browser                        │
-│                                                          │
-│  ┌──────────┐   ┌──────────┐   ┌──────────────────────┐ │
-│  │ ZerithDB │   │   Sync   │   │   P2P Network Layer  │ │
-│  │   SDK    │──▶│  Engine  │──▶│  (WebRTC mesh)       │ │
-│  └──────────┘   │  (CRDT)  │   └──────────────────────┘ │
-│       │         └──────────┘            │               │
-│       ▼              │                  │               │
-│  ┌──────────┐        │          ┌───────▼──────┐        │
-│  │ Local DB │◀───────┘          │  Signaling   │        │
-│  │(IndexedDB│                   │  Server      │        │
-│  └──────────┘                   │  (WS relay)  │        │
-└──────────────────────────────── └──────────────┘ ───────┘
-                                         ▲
-                        Only for initial │ peer discovery
-                                         │
-                             ┌───────────┴──────────┐
-                             │   Other Peer Browser  │
-                             └──────────────────────┘
+```mermaid
+flowchart TB
+  subgraph browser["Your Browser"]
+    direction LR
+    SDK["ZerithDB SDK"]
+    SYNC["Sync Engine\n(CRDT)"]
+    P2P["P2P Network Layer\n(WebRTC mesh)"]
+    SDK -->|writes| SYNC
+    SYNC -->|broadcast| P2P
+  end
+
+  subgraph storage["Local Storage"]
+    DB["Local DB\n(IndexedDB)"]
+  end
+
+  SDK -->|persist| DB
+  SYNC -->|flush| DB
+
+  SIG["Signaling Server\n(WS relay)"]
+  PEER["Other Peer Browser"]
+
+  P2P -->|handshake only| SIG
+  SIG -->|peer discovery| PEER
+  P2P <-.->|"direct P2P\n(after handshake)"| PEER
 ```
 
 The signaling server **never sees your data**. It only brokers the initial WebRTC handshake. After
@@ -167,6 +249,52 @@ npx zerithdb signal --port 4000
 
 # Generate TypeScript types from your schema
 npx zerithdb types --output ./src/db.types.ts
+```
+
+---
+
+## Firebase Import
+
+Migrating from Firebase Realtime Database? ZerithDB includes a built-in import tool that converts
+Firebase JSON exports into ZerithDB-compatible collection files.
+
+```bash
+# Basic usage — reads Firebase export, writes one JSON file per collection
+node scripts/firebase-import.mjs ./firebase-export.json
+
+# Custom output directory
+node scripts/firebase-import.mjs ./firebase-export.json --out ./my-collections
+```
+
+**How it works:**
+
+- Each **top-level key** in the Firebase export becomes a **ZerithDB collection**
+- Each **child object** becomes a **document** in that collection
+- Arrays and nested objects within documents are **preserved as-is**
+- The original Firebase push key is stored as `_firebaseKey` for traceability
+- No external dependencies — uses only Node.js built-ins
+
+**Example input** (`firebase-export.json`):
+
+```json
+{
+  "users": {
+    "-Mxyz1": { "name": "Alice", "age": 30 },
+    "-Mxyz2": { "name": "Bob", "age": 25 }
+  },
+  "posts": {
+    "-Mabc1": { "title": "Hello", "tags": ["news", "update"] }
+  }
+}
+```
+
+**Example output** (`firebase-import-output/users.json`):
+
+```json
+[
+  { "_firebaseKey": "-Mxyz1", "name": "Alice", "age": 30 },
+  { "_firebaseKey": "-Mxyz2", "name": "Bob", "age": 25 }
+]
 ```
 
 ---
@@ -220,3 +348,5 @@ Good places to start:
 Apache 2.0 — see [LICENSE](LICENSE).
 
 Built with ❤️ by the ZerithDB community.
+
+Contributor: YASHODHA (GSSoC 2026)

@@ -17,6 +17,7 @@ type Listener<T> = (event: T) => void;
  */
 export class EventEmitter<TEvents extends Record<string, unknown>> {
   private readonly listeners = new Map<keyof TEvents, Set<Listener<TEvents[keyof TEvents]>>>();
+  private readonly onceWrappers = new WeakMap<Listener<any>, Listener<any>>();
 
   on<K extends keyof TEvents>(event: K, listener: Listener<TEvents[K]>): this {
     let set = this.listeners.get(event);
@@ -30,14 +31,21 @@ export class EventEmitter<TEvents extends Record<string, unknown>> {
 
   once<K extends keyof TEvents>(event: K, listener: Listener<TEvents[K]>): this {
     const wrapper = (payload: TEvents[K]) => {
-      listener(payload);
       this.off(event, wrapper);
+      listener(payload);
     };
+    this.onceWrappers.set(listener, wrapper);
     return this.on(event, wrapper);
   }
 
   off<K extends keyof TEvents>(event: K, listener: Listener<TEvents[K]>): this {
-    this.listeners.get(event)?.delete(listener as Listener<TEvents[keyof TEvents]>);
+    const wrapper = this.onceWrappers.get(listener);
+    if (wrapper !== undefined) {
+      this.onceWrappers.delete(listener);
+      this.listeners.get(event)?.delete(wrapper as Listener<TEvents[keyof TEvents]>);
+    } else {
+      this.listeners.get(event)?.delete(listener as Listener<TEvents[keyof TEvents]>);
+    }
     return this;
   }
 
