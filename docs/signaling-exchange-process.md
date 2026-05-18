@@ -26,7 +26,7 @@ channels. The signaling server is no longer involved in data transfer.
 
 ## High-Level Flow
 
-```text
+````text
 Peer A
    │
    ├── Connects to signaling server
@@ -54,21 +54,33 @@ Example from the implementation:
 const signalingUrl =
   this.config.sync?.signalingUrl ??
   "wss://arpitkhandelwal810-zerith-signaling.hf.space";
-```
+````
 
 The WebSocket connection includes:
 
 - `room` → identifies the room being joined
 - `peer` → uniquely identifies the local peer
+- `powChallenge` and `powNonce` → Hashcash proof-of-work solution for the initial join
 
 Example:
 
 ```text
-wss://signal-server-url?room=my-room&peer=peer-id
+wss://signal-server-url?room=my-room&peer=peer-id&powChallenge=...&powNonce=...
 ```
 
 At this stage, the connection is only used for signaling and peer discovery. Application data is not
 sent through the signaling server.
+
+Before opening the WebSocket, the browser SDK fetches a short-lived challenge from:
+
+```text
+GET /pow/challenge?room=my-room&peer=peer-id
+```
+
+The signaling server signs the challenge and chooses the current difficulty based on active peer
+load plus the configured `POW_THREAT_LEVEL`. Verification is intentionally fast: the server checks
+the signature, expiration, replay cache, room/peer binding, and one SHA-256 digest. HTTP polling
+uses the same puzzle in `POST /poll/join` under the `pow` field.
 
 ---
 
@@ -162,7 +174,7 @@ networks or behind NATs.
 ZerithDB enables trickle ICE:
 
 ```ts
-trickle: true
+trickle: true;
 ```
 
 This allows candidates to be exchanged gradually instead of waiting for all candidates to be
@@ -183,10 +195,7 @@ peer.signal(msg.payload);
 For NAT traversal, ZerithDB uses public STUN servers:
 
 ```ts
-[
-  { urls: "stun:stun.l.google.com:19302" },
-  { urls: "stun:stun1.l.google.com:19302" }
-]
+[{ urls: "stun:stun.l.google.com:19302" }, { urls: "stun:stun1.l.google.com:19302" }];
 ```
 
 ---

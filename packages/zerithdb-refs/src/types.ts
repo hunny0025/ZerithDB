@@ -18,7 +18,10 @@ export interface HydrationOptions {
   forceNetwork?: boolean;
   p2pTimeoutMs?: number;
 }
-export type RefChangeCallback<T extends Record<string, unknown> = Record<string, unknown>> = (updatedDoc: T, ref: DocumentRef) => void;
+export type RefChangeCallback<T extends Record<string, unknown> = Record<string, unknown>> = (
+  updatedDoc: T,
+  ref: DocumentRef
+) => void;
 export interface SubscribeOptions {
   onChange: RefChangeCallback;
   depth?: number;

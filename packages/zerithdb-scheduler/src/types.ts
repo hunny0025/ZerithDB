@@ -6,6 +6,7 @@ export interface ScheduledTask {
   cronExpression: string;
   taskType: string;
   enabled: boolean;
+  handler: () => void | Promise<void>;
   lastRunAt?: number;
   lastRunBy?: PeerId;
   createdAt: number;

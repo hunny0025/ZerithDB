@@ -25,17 +25,11 @@
     <AddTodo @add="handleAdd" />
 
     <!-- Todo list: demonstrates find(), update(), delete() -->
-    <TodoList
-      :items="items"
-      @toggle="handleToggle"
-      @remove="handleRemove"
-    />
+    <TodoList :items="items" @toggle="handleToggle" @remove="handleRemove" />
 
     <!-- Clear all: demonstrates clearAll() -->
     <div v-if="items.length > 0" class="actions">
-      <button class="clear-btn" @click="handleClearAll">
-        Clear all todos
-      </button>
+      <button class="clear-btn" @click="handleClearAll">Clear all todos</button>
     </div>
   </div>
 </template>

@@ -4,6 +4,7 @@ import ora from "ora";
 import chalk from "chalk";
 import { execa } from "execa";
 import prompts from "prompts";
+import { validateProjectName, getProjectNameError } from "../validate-project-name.js";
 import { writeFile } from "../utils/writeFile.js";
 
 const TEMPLATES: Record<string, string> = {
@@ -13,20 +14,6 @@ const TEMPLATES: Record<string, string> = {
   blank: "blank",
 };
 
-const MAX_PACKAGE_NAME_LENGTH = 214;
-
-function getAppNameValidationError(value: string): string | null {
-  if (!/^[a-z0-9-]+$/.test(value)) {
-    return "App name can only contain lowercase letters, numbers, and dashes.";
-  }
-
-  if (value.length > MAX_PACKAGE_NAME_LENGTH) {
-    return `App name must be ${MAX_PACKAGE_NAME_LENGTH} characters or fewer.`;
-  }
-
-  return null;
-}
-
 export async function initCommand(
   appNameArg: string | undefined,
   options: { template: string; install: boolean }
@@ -35,27 +22,27 @@ export async function initCommand(
   let appName = appNameArg;
 
   if (appName !== undefined) {
-    const validationError = getAppNameValidationError(appName);
-
-    if (validationError !== null) {
-      console.error(chalk.red(`Error: ${validationError}`));
-      process.exit(1);
-    }
+    // Passed as a CLI argument — validate and exit immediately if invalid.
+    // validateProjectName() prints a friendly error and calls process.exit(1).
+    validateProjectName(appName);
   }
 
   if (appName === undefined || appName.trim() === "") {
+    // No name provided — prompt the user interactively.
     const response = await prompts({
       type: "text",
       name: "appName",
       message: "What is your app name?",
       initial: "my-zerithdb-app",
-      validate: (v: string) => getAppNameValidationError(v) ?? true,
+      // Re-use the same validation logic so the prompt gives inline feedback.
+      validate: (v: string) => getProjectNameError(v) ?? true,
     });
 
     appName = response.appName as string;
   }
 
   if (appName === undefined || appName.trim() === "") {
+    // User cancelled the prompt (Ctrl-C).
     console.log(chalk.red("Aborted."));
     process.exit(1);
   }

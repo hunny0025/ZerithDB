@@ -3,6 +3,12 @@
 import { useEffect, useState } from "react";
 import { mergePlaygroundNotes, type PlaygroundNote } from "@/lib/playground-queries";
 
+export type MergeReview = {
+  localNotes: PlaygroundNote[];
+  remoteNotes: PlaygroundNote[];
+  suggestion: PlaygroundNote[];
+};
+
 const INITIAL_NOTE: PlaygroundNote = {
   id: "seed",
   text: "Welcome! Run a query to see CRDT sync.",
@@ -17,6 +23,7 @@ export function usePlaygroundSync(initialNote: PlaygroundNote = INITIAL_NOTE) {
   const [isLoading, setIsLoading] = useState(true);
   const [isPeerConnected, setIsPeerConnected] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
+  const [mergeReview, setMergeReview] = useState<MergeReview | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -47,18 +54,35 @@ export function usePlaygroundSync(initialNote: PlaygroundNote = INITIAL_NOTE) {
   useEffect(() => {
     if (!isOnline) return;
 
+    if (mergeReview) return;
+
     const merged = mergePlaygroundNotes(clientA, clientB);
     const mergedJson = JSON.stringify(merged);
     const changedA = mergedJson !== JSON.stringify(clientA);
     const changedB = mergedJson !== JSON.stringify(clientB);
 
-    if (changedA) setClientA(merged); // eslint-disable-line react-hooks/set-state-in-effect
-    if (changedB) setClientB(merged);
     if (changedA || changedB) {
-      setSyncCount((prev) => prev + 1);
-      setLastSyncedAt(Date.now());
+      setMergeReview({
+        localNotes: clientA,
+        remoteNotes: clientB,
+        suggestion: merged,
+      });
     }
-  }, [clientA, clientB, isOnline]);
+  }, [clientA, clientB, isOnline, mergeReview]);
+
+  const approveMergeReview = () => {
+    if (!mergeReview) return;
+
+    setClientA(mergeReview.suggestion);
+    setClientB(mergeReview.suggestion);
+    setMergeReview(null);
+    setSyncCount((prev) => prev + 1);
+    setLastSyncedAt(Date.now());
+  };
+
+  const dismissMergeReview = () => {
+    setMergeReview(null);
+  };
 
   const insertOnClientA = (note: PlaygroundNote) => {
     setClientA((prev) => [...prev, note]);
@@ -73,6 +97,9 @@ export function usePlaygroundSync(initialNote: PlaygroundNote = INITIAL_NOTE) {
     isLoading,
     peerStatus,
     lastSyncedAt,
+    mergeReview,
+    approveMergeReview,
+    dismissMergeReview,
     insertOnClientA,
   };
 }

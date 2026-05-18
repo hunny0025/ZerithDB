@@ -4,6 +4,7 @@ import type { ZerithDBConfig, Identity, Signature } from "zerithdb-core";
 import { ZerithDBError, ErrorCode, EventEmitter } from "zerithdb-core";
 import { timingSafeEqual } from "./timing-safe.js";
 import { splitSecret, recoverSecret } from "zerithdb-wasm-crypto";
+import { UCAN, Capability, DelegateOptions, signUCAN, verifyUCAN, verifyDelegationChain, extractCapabilities } from './capability/index.js';
 
 interface KeyValueStorage {
   getItem(key: string): string | null;
@@ -52,6 +53,7 @@ export class AuthManager extends EventEmitter<AuthEvents> {
   private readonly storage: KeyValueStorage;
   private _identity: Identity | null = null;
   private privateKeyBytes: Uint8Array | null = null;
+  public readonly biometric = new BiometricKeyManager();
 
   constructor(config: ZerithDBConfig) {
     super();
@@ -188,7 +190,7 @@ export class AuthManager extends EventEmitter<AuthEvents> {
     try {
       const privateKey = await recoverSecret(shards);
       const publicKeyBytes = await ed.getPublicKeyAsync(privateKey);
-      
+
       const identity = this.buildIdentity(publicKeyBytes);
       this._identity = identity;
       this.privateKeyBytes = privateKey;
@@ -251,6 +253,74 @@ export class AuthManager extends EventEmitter<AuthEvents> {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Returns the current identity's private key and DID.
+   * @throws if not signed in.
+   */
+  private async getIdentity(): Promise<{ privateKey: Uint8Array; publicKeyDid: string }> {
+    if (!this._identity || !this.privateKeyBytes) {
+      throw new ZerithDBError(
+        ErrorCode.AUTH_KEY_NOT_FOUND,
+        "No identity loaded. Call auth.signIn() first."
+      );
+    }
+    return {
+      privateKey: this.privateKeyBytes,
+      publicKeyDid: this._identity.did,
+    };
+  }
+
+  /**
+   * Delegate capabilities to another peer (DID).
+   * @param targetDid The DID of the delegatee.
+   * @param capabilities Array of capabilities to grant.
+   * @param options Expiration, proof chain.
+   * @returns A signed UCAN.
+   */
+  async delegate(
+    targetDid: string,
+    capabilities: Capability[],
+    options: DelegateOptions = {}
+  ): Promise<UCAN> {
+    const identity = await this.getIdentity();
+    const expiresIn = options.expiresIn ?? 3600;
+    const exp = Math.floor(Date.now() / 1000) + expiresIn;
+
+    const ucan: Omit<UCAN, 'sig'> = {
+      iss: identity.publicKeyDid,
+      aud: targetDid,
+      att: capabilities,
+      exp,
+      prf: options.proof,
+    };
+    return await signUCAN(ucan, identity.privateKey);
+  }
+
+  /**
+   * Verify a received UCAN and optionally check its chain against a trust root.
+   * @param ucan The UCAN to verify.
+   * @param expectedAudience If provided, must match UCAN's `aud`.
+   * @param trustRoot Optional DID that must be at the root of the delegation chain.
+   * @returns True if valid.
+   */
+  async verifyUCAN(
+    ucan: UCAN,
+    expectedAudience?: string,
+    trustRoot?: string
+  ): Promise<boolean> {
+    if (trustRoot) {
+      return await verifyDelegationChain(ucan, trustRoot);
+    }
+    return await verifyUCAN(ucan, expectedAudience);
+  }
+
+  /**
+   * Extract capabilities from a verified UCAN.
+   */
+  getCapabilities(ucan: UCAN): Capability[] {
+    return extractCapabilities(ucan);
   }
 }
 

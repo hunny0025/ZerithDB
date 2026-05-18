@@ -14,7 +14,7 @@ export interface DatadogLogPayload {
   ddsource: string;
   ddtags: string;
   host: string;
-  timestamp: string;   // ISO 8601
+  timestamp: string; // ISO 8601
   logger?: { name: string };
   [key: string]: unknown; // passthrough extra fields
 }

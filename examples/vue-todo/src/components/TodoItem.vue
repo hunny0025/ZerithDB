@@ -1,14 +1,8 @@
 <template>
   <div class="todo-item" :class="{ done: item.done }">
-    <input
-      type="checkbox"
-      :checked="item.done"
-      @change="$emit('toggle')"
-    />
+    <input type="checkbox" :checked="item.done" @change="$emit('toggle')" />
     <span class="text">{{ item.text }}</span>
-    <button class="delete-btn" title="Delete" @click="$emit('remove')">
-      ✕
-    </button>
+    <button class="delete-btn" title="Delete" @click="$emit('remove')">✕</button>
   </div>
 </template>
 

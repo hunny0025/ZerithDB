@@ -167,9 +167,9 @@ jobs:
               print(f"Comment error: {post.stderr}", file=sys.stderr)
           PYEOF
         env:
-          GH_TOKEN:          ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-          WORKFLOW_RUN_ID:   ${{ github.event.workflow_run.id }}
-          HEAD_SHA:          ${{ github.event.workflow_run.head_sha }}
-          HEAD_BRANCH:       ${{ github.event.workflow_run.head_branch }}
-          RUN_URL:           ${{ github.event.workflow_run.html_url }}
+          WORKFLOW_RUN_ID: ${{ github.event.workflow_run.id }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+          HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}

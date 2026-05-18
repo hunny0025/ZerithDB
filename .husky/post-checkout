@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+# .husky/post-checkout
+# Runs after every `git checkout` and `git switch`.  Keeps node_modules in
+# sync when you move between branches that have different lockfiles.
+
+prev_HEAD=$1
+new_HEAD=$2
+is_branch_checkout=$3   # 1 = branch checkout, 0 = file checkout
+
+# Only act on branch checkouts (not single-file checkouts)
+if [ "$is_branch_checkout" = "1" ]; then
+  if git diff --name-only "$prev_HEAD" "$new_HEAD" | grep -q "pnpm-lock.yaml"; then
+    echo "⚙️  pnpm-lock.yaml changed between branches — running pnpm install..."
+    pnpm install
+  fi
+fi

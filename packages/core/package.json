@@ -9,9 +9,9 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     }
   },
   "scripts": {
@@ -23,21 +23,22 @@
     "clean": "rimraf dist"
   },
   "devDependencies": {
-    "zerithdb-eslint-config": "workspace:*",
-    "zerithdb-tsconfig": "workspace:*",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.57.0",
     "rimraf": "^6.0.1",
     "tsup": "^8.2.4",
     "typescript": "^5.5.4",
-    "vitest": "^2.0.5"
+    "vitest": "^2.0.5",
+    "zerithdb-eslint-config": "workspace:*",
+    "zerithdb-tsconfig": "workspace:*"
   },
   "files": [
     "dist",
     "src"
   ],
   "dependencies": {
-    "zerithdb-errors": "workspace:*"
+    "zerithdb-errors": "workspace:*",
+    "zod": "^4.4.3"
   }
 }

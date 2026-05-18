@@ -2,8 +2,13 @@
   "extends": "../../packages/tsconfig/base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src",
-    "moduleResolution": "Bundler"
+    "rootDir": ".",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "paths": {
+      "zerithdb-auth": ["../auth/dist/index.d.ts"],
+      "zerithdb-core": ["../core/dist/index.d.ts"]
+    }
   },
-  "include": ["src"]
+  "include": ["src/**/*.ts"]
 }

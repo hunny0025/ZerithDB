@@ -1,4 +1,4 @@
-import type { Table } from "dexie";
+import { Dexie, type Table } from "dexie";
 import { EventEmitter } from "zerithdb-core";
 import { getQueueDb, type QueueTableName } from "./queue-db.js";
 import type { QueueChange, QueuedMutation, QueuedMutationDirection } from "./types.js";

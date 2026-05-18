@@ -2,7 +2,7 @@
 
 Thank you for your interest in ZerithDB! Every contribution — code, docs, tests, bug reports —
 matters enormously.
-
+ 
 ---
 
 ## Table of Contents
@@ -17,7 +17,6 @@ matters enormously.
 - [Pull Request Checklist](#pull-request-checklist)
 - [Release Process](#release-process)
 - [Getting Help](#getting-help)
-
 ---
 
 ## Code of Conduct

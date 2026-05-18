@@ -3,24 +3,18 @@ import { formatForDatadog, formatBatch } from "../src/formatter";
 
 const baseOpts = {
   service: "test-service",
-  env:     "test",
-  tags:    ["team:core"],
+  env: "test",
+  tags: ["team:core"],
 };
 
 describe("formatForDatadog", () => {
   it("maps warn → warning", () => {
-    const result = formatForDatadog(
-      { level: "warn", message: "low memory" },
-      baseOpts
-    );
+    const result = formatForDatadog({ level: "warn", message: "low memory" }, baseOpts);
     expect(result.status).toBe("warning");
   });
 
   it("includes env and custom tags in ddtags", () => {
-    const result = formatForDatadog(
-      { level: "info", message: "ok" },
-      baseOpts
-    );
+    const result = formatForDatadog({ level: "info", message: "ok" }, baseOpts);
     expect(result.ddtags).toContain("env:test");
     expect(result.ddtags).toContain("team:core");
   });
@@ -34,10 +28,7 @@ describe("formatForDatadog", () => {
   });
 
   it("timestamp is ISO 8601", () => {
-    const result = formatForDatadog(
-      { level: "debug", message: "x" },
-      baseOpts
-    );
+    const result = formatForDatadog({ level: "debug", message: "x" }, baseOpts);
     expect(() => new Date(result.timestamp)).not.toThrow();
   });
 });

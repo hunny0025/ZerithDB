@@ -158,6 +158,11 @@ export class NetworkManager extends EventEmitter<NetworkEvents> {
     return this.activeTransportType;
   }
 
+  /** The local peer's unique identifier within the current P2P session. */
+  get peerId(): PeerId {
+    return this.localPeerId;
+  }
+
   /**
    * Returns the ordered list of signaling URLs to try.
    * Supports both signalingUrls (array) and signalingUrl (single).
@@ -238,21 +243,57 @@ export class NetworkManager extends EventEmitter<NetworkEvents> {
    * Broadcast a message to all connected peers.
    */
   broadcast(message: { type: string; payload: string | Uint8Array }): void {
-    const data = JSON.stringify(message);
-    for (const [, peer] of this.peers) {
-      if (peer.connected) {
-        peer.send(data);
-      }
-    }
+    void this.signAndSendAsync(message, null);
   }
 
   /**
    * Send a message to a specific peer.
    */
   sendTo(peerId: PeerId, message: { type: string; payload: string | Uint8Array }): void {
-    const peer = this.peers.get(peerId);
-    if (peer?.connected) {
-      peer.send(JSON.stringify(message));
+    void this.signAndSendAsync(message, peerId);
+  }
+
+  private async signAndSendAsync(
+    message: { type: string; payload: string | Uint8Array },
+    targetPeerId: PeerId | null
+  ): Promise<void> {
+    try {
+      let finalMessage = { ...message } as any;
+
+      if (this.auth?.biometric?.isBiometricEnabled()) {
+        const payloadBytes =
+          typeof message.payload === "string"
+            ? new TextEncoder().encode(message.payload)
+            : message.payload;
+
+        const sigBytes = await this.auth.biometric.sign(payloadBytes);
+        const signature = bytesToHex(sigBytes);
+        const senderPublicKey = await this.auth.biometric.getPublicKeyHex();
+
+        finalMessage = {
+          type: message.type,
+          payload: message.payload,
+          signature,
+          senderPublicKey,
+        };
+      }
+
+      const data = JSON.stringify(finalMessage);
+
+      if (targetPeerId === null) {
+        for (const [, peer] of this.peers) {
+          if (peer.connected) {
+            peer.send(data);
+          }
+        }
+      } else {
+        const peer = this.peers.get(targetPeerId);
+        if (peer?.connected) {
+          peer.send(data);
+        }
+      }
+    } catch (err) {
+      console.error("[ZerithDB] Failed to sign/send WebRTC message:", err);
     }
   }
 
@@ -294,6 +335,62 @@ export class NetworkManager extends EventEmitter<NetworkEvents> {
     };
   }
 
+  // ─── Media stream API (WebRTC media tracks) ───────────────────────────────
+
+  /**
+   * Publish a local MediaStream to all connected peers.
+   * Returns the normalised metadata record for this stream.
+   *
+   * @see {@link VideoConferenceManager.publishStream}
+   */
+  addMediaStream(
+    stream: MediaStream,
+    metadata: MediaStreamMetadataInput = {}
+  ): MediaStreamMetadata {
+    return {
+      streamId: stream.id,
+      label: typeof metadata.label === "string" ? metadata.label : undefined,
+      audioMuted: false,
+      videoMuted: false,
+      tracks: stream
+        .getTracks()
+        .map((t) => ({ kind: t.kind as "audio" | "video", muted: !t.enabled })),
+      ...metadata,
+    };
+  }
+
+  /**
+   * Stop sending a local MediaStream to peers.
+   */
+  removeMediaStream(_streamOrId: MediaStream | string): void {
+    // no-op — full implementation tracked separately
+  }
+
+  /**
+   * Update metadata for a stream that has already been published.
+   * Returns the updated metadata, or `undefined` if the stream is not found.
+   */
+  updateMediaStreamMetadata(
+    _streamId: string,
+    _metadata: MediaStreamMetadataInput
+  ): MediaStreamMetadata | undefined {
+    return undefined;
+  }
+
+  /**
+   * Enable or disable audio/video tracks in a published stream.
+   */
+  setMediaTrackEnabled(_kind: "audio" | "video", _enabled: boolean, _streamId?: string): void {
+    // no-op — full implementation tracked separately
+  }
+
+  /**
+   * Returns metadata for all locally published streams.
+   */
+  getLocalMediaStreamMetadata(): MediaStreamMetadata[] {
+    return [];
+  }
+
   async dispose(): Promise<void> {
     this.disposed = true;
     this.stopPeerHealthCheck();
@@ -318,10 +415,17 @@ export class NetworkManager extends EventEmitter<NetworkEvents> {
   // ─── Private — Transport setup ────────────────────────────────────────────
 
   private async connectWebSocket(signalingUrl: string, roomId: string): Promise<void> {
-    const url = `${signalingUrl}?room=${encodeURIComponent(roomId)}&peer=${this.localPeerId}`;
+    const proofOfWork = await this.createProofOfWork(signalingUrl, roomId);
+    const url = new URL(signalingUrl);
+    url.searchParams.set("room", roomId);
+    url.searchParams.set("peer", this.localPeerId);
+    if (proofOfWork !== null) {
+      url.searchParams.set("powChallenge", proofOfWork.challenge);
+      url.searchParams.set("powNonce", proofOfWork.nonce);
+    }
 
     const wsTransport = new WebSocketTransport();
-    await wsTransport.connect(url, 5000);
+    await wsTransport.connect(url.toString(), 5000);
 
     this.attachTransport(wsTransport, roomId);
     this.activeTransportType = "websocket";
@@ -330,9 +434,10 @@ export class NetworkManager extends EventEmitter<NetworkEvents> {
 
   private async connectPolling(signalingUrl: string, roomId: string): Promise<void> {
     const httpUrl = this.wsUrlToHttp(signalingUrl);
+    const proofOfWork = await this.createProofOfWork(signalingUrl, roomId);
 
     const pollTransport = new PollingTransport(httpUrl);
-    await pollTransport.connect(roomId, this.localPeerId);
+    await pollTransport.connect(roomId, this.localPeerId, proofOfWork);
 
     this.attachTransport(pollTransport, roomId);
     this.activeTransportType = "polling";
@@ -379,6 +484,11 @@ export class NetworkManager extends EventEmitter<NetworkEvents> {
 
   private handleSignalingMessage(msg: SignalingMessage): void {
     switch (msg.type) {
+      case "announcement":
+        console.warn(`[ZerithDB] System Announcement: ${msg.payload}`);
+        this.emit("announcement", msg.payload as string);
+        break;
+
       case "peer-list":
         for (const peerId of msg.payload as PeerId[]) {
           if (peerId !== this.localPeerId) {

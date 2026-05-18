@@ -1,4 +1,9 @@
-import type { EphemeralPeerState, PeerId, ZerithDBConfig } from "zerithdb-core";
+import type {
+  EphemeralPeerState,
+  IncomingPeerDataMessage,
+  PeerId,
+  ZerithDBConfig,
+} from "zerithdb-core";
 import { EventEmitter } from "zerithdb-core";
 import type { NetworkManager } from "zerithdb-network";
 
@@ -206,11 +211,7 @@ export class EphemeralStateManager<
     });
   }
 
-  private onNetworkMessage(msg: {
-    type: string;
-    payload: Uint8Array | string;
-    from: string;
-  }): void {
+  private onNetworkMessage(msg: IncomingPeerDataMessage): void {
     if (msg.type !== "ephemeral" || typeof msg.payload !== "string") return;
 
     let decoded: EphemeralWireMessage<TState>;

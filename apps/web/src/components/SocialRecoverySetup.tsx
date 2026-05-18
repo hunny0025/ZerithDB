@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AuthManager } from "zerithdb-auth";
 
 interface SocialRecoverySetupProps {
-  authManager: AuthManager;
+  authManager: InstanceType<typeof AuthManager>;
 }
 
 export default function SocialRecoverySetup({ authManager }: SocialRecoverySetupProps) {
@@ -21,11 +21,11 @@ export default function SocialRecoverySetup({ authManager }: SocialRecoverySetup
     try {
       setLoading(true);
       setError(null);
-      
+
       if (threshold > total) {
         throw new Error("Threshold cannot be greater than total shards.");
       }
-      
+
       const generatedShards = await authManager.generateRecoveryShards(threshold, total);
       setShards(generatedShards);
     } catch (err: unknown) {
@@ -49,7 +49,9 @@ export default function SocialRecoverySetup({ authManager }: SocialRecoverySetup
         </div>
         <div>
           <h2 className="text-xl font-bold text-gray-900">Social Recovery Setup</h2>
-          <p className="text-sm text-gray-500">Split your master key using Shamir&apos;s Secret Sharing</p>
+          <p className="text-sm text-gray-500">
+            Split your master key using Shamir&apos;s Secret Sharing
+          </p>
         </div>
       </div>
 
@@ -57,9 +59,7 @@ export default function SocialRecoverySetup({ authManager }: SocialRecoverySetup
         <div className="space-y-6">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Total Shards
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Total Shards</label>
               <input
                 type="number"
                 min="2"
@@ -114,12 +114,18 @@ export default function SocialRecoverySetup({ authManager }: SocialRecoverySetup
         >
           <div className="p-4 bg-yellow-50 text-yellow-800 rounded-xl text-sm border border-yellow-200 mb-6">
             <p className="font-semibold mb-1">Important: Distribute these shards securely.</p>
-            <p>You will need at least {threshold} of these {total} shards to recover your identity. Do not store them all in the same place.</p>
+            <p>
+              You will need at least {threshold} of these {total} shards to recover your identity.
+              Do not store them all in the same place.
+            </p>
           </div>
 
           <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
             {shards.map((shard, idx) => (
-              <div key={idx} className="p-4 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between gap-4">
+              <div
+                key={idx}
+                className="p-4 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between gap-4"
+              >
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-gray-500 mb-1">Shard {idx + 1}</p>
                   <p className="text-sm font-mono text-gray-800 truncate">{shard}</p>
@@ -130,7 +136,9 @@ export default function SocialRecoverySetup({ authManager }: SocialRecoverySetup
                   title="Copy Shard"
                 >
                   {copiedIndex === idx ? (
-                    <span className="text-xs font-medium text-blue-600 px-2 py-1 bg-blue-100 rounded-md">Copied!</span>
+                    <span className="text-xs font-medium text-blue-600 px-2 py-1 bg-blue-100 rounded-md">
+                      Copied!
+                    </span>
                   ) : (
                     <Copy className="w-5 h-5" />
                   )}

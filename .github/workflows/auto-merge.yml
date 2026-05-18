@@ -134,5 +134,5 @@ jobs:
           print("\n✅ Auto-merge scan complete")
           PYEOF
         env:
-          GH_TOKEN:          ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}

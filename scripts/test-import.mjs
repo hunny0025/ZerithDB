@@ -36,7 +36,8 @@ async function run() {
     const { stdout, stderr } = await exec("node", [
       resolve(root, "scripts/firebase-import.mjs"),
       resolve(root, "scripts/fixtures/sample-firebase-export.json"),
-      "--out", OUT
+      "--out",
+      OUT,
     ]);
     console.log(stdout);
     assert(stdout.includes("collection(s)"), "Output mentions collections");
@@ -81,7 +82,10 @@ async function run() {
   try {
     const settingsRaw = await readFile(resolve(OUT, "settings.json"), "utf-8");
     const settings = JSON.parse(settingsRaw);
-    assert(settings.length === 1, `settings.json wrapped as single document (got ${settings.length})`);
+    assert(
+      settings.length === 1,
+      `settings.json wrapped as single document (got ${settings.length})`
+    );
     assert(settings[0].theme === "dark", "Settings preserves primitive values");
     assert(settings[0].notifications.email === true, "Settings preserves nested booleans");
   } catch (err) {
@@ -91,22 +95,21 @@ async function run() {
   // Test 3: Error handling — missing file
   console.log("\n📌 Test 3: Error handling");
   try {
-    await exec("node", [
-      resolve(root, "scripts/firebase-import.mjs"),
-      "nonexistent-file.json"
-    ]);
+    await exec("node", [resolve(root, "scripts/firebase-import.mjs"), "nonexistent-file.json"]);
     assert(false, "Should fail on missing file");
   } catch (err) {
-    assert(err.stderr?.includes("Import failed") || err.stdout?.includes("Import failed") || err.code === 1, "Exits with error on missing file");
+    assert(
+      err.stderr?.includes("Import failed") ||
+        err.stdout?.includes("Import failed") ||
+        err.code === 1,
+      "Exits with error on missing file"
+    );
   }
 
   // Test 4: Help flag
   console.log("\n📌 Test 4: Help flag");
   try {
-    const { stdout } = await exec("node", [
-      resolve(root, "scripts/firebase-import.mjs"),
-      "--help"
-    ]);
+    const { stdout } = await exec("node", [resolve(root, "scripts/firebase-import.mjs"), "--help"]);
     assert(stdout.includes("Firebase"), "Help output mentions Firebase");
     assert(stdout.includes("Usage"), "Help output shows usage");
   } catch {

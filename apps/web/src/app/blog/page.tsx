@@ -1,15 +1,14 @@
-
 "use client";
 
 import Link from "next/link";
-import { Zap, BookOpen, ArrowLeft } from "lucide-react";
+import { Zap, BookOpen } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function BlogPage() {
   return (
-    <main className="flex flex-col min-h-screen bg-white selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
+    <main className="flex flex-col min-h-screen bg-background selection:bg-blue-100 selection:text-blue-900 overflow-x-hidden">
       {/* ── HEADER ── */}
-      <header className="sticky top-0 z-50 w-full border-b border-gray-200/50 bg-white/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2">
             <motion.div
@@ -19,19 +18,19 @@ export default function BlogPage() {
             >
               <img src="/logo.svg" alt="ZerithDB Logo" className="w-full h-full" />
             </motion.div>
-            <span className="font-semibold text-xl tracking-tight text-gray-900">ZerithDB</span>
+            <span className="font-semibold text-xl tracking-tight text-foreground">ZerithDB</span>
           </Link>
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-600">
-            <Link href="/docs" className="hover:text-black transition-colors font-medium">
+          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground">
+            <Link href="/docs" className="hover:text-foreground transition-colors font-medium">
               Docs
             </Link>
-            <Link href="/#features" className="hover:text-black transition-colors">
+            <Link href="/#features" className="hover:text-foreground transition-colors">
               Features
             </Link>
-            <Link href="/#how-it-works" className="hover:text-black transition-colors">
+            <Link href="/#how-it-works" className="hover:text-foreground transition-colors">
               How it works
             </Link>
-            <Link href="/#compare" className="hover:text-black transition-colors">
+            <Link href="/#compare" className="hover:text-foreground transition-colors">
               Compare
             </Link>
             <Link
@@ -46,7 +45,7 @@ export default function BlogPage() {
               href="https://github.com/Zerith-Labs/ZerithDB"
               target="_blank"
               rel="noreferrer"
-              className="hidden md:flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-black transition-colors"
+              className="hidden md:flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -67,7 +66,7 @@ export default function BlogPage() {
             </a>
             <Link
               href="/#get-started"
-              className="bg-black text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
+              className="bg-primary text-primary-foreground text-sm font-medium px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
             >
               Get Started
             </Link>
@@ -82,86 +81,54 @@ export default function BlogPage() {
           <motion.div
             animate={{
               y: [0, -20, 0],
-              opacity: [0.3, 0.5, 0.3],
+              opacity: [0.1, 0.2, 0.1],
             }}
             transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-20 -left-20 w-64 h-64 bg-blue-100 rounded-full blur-3xl"
+            className="absolute top-20 -left-20 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl"
           />
           <motion.div
             animate={{
               y: [0, 20, 0],
-              opacity: [0.2, 0.4, 0.2],
+              opacity: [0.1, 0.2, 0.1],
             }}
             transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute top-40 -right-20 w-80 h-80 bg-indigo-100 rounded-full blur-3xl"
+            className="absolute top-40 -right-20 w-80 h-80 bg-indigo-500/20 rounded-full blur-3xl"
           />
         </div>
 
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="text-center max-w-2xl mx-auto"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-muted p-3 rounded-2xl mb-8"
         >
-          <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-sm border border-blue-100">
-            <BookOpen className="w-8 h-8" />
-          </div>
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-gray-900 mb-6">
-            Blog{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
-              Coming Soon
-            </span>
+          <BookOpen className="w-10 h-10 text-blue-600" />
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center"
+        >
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-foreground mb-6">
+            ZerithDB Blog
           </h1>
-          <p className="mt-6 text-xl text-gray-500 text-balance leading-relaxed">
-            We&apos;re preparing deep dives into CRDTs, peer-to-peer web architecture, and tutorials
-            on building offline-first applications. Stay tuned!
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
+            Insights on local-first development, CRDTs, and the future of peer-to-peer databases.
           </p>
-          <div className="mt-10 flex items-center justify-center gap-4">
-            <Link
-              href="/"
-              className="flex items-center gap-2 bg-black text-white px-6 py-3.5 rounded-xl font-medium text-base hover:bg-gray-800 transition-all shadow-sm"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to Home
-            </Link>
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 rounded-full text-sm font-medium border border-blue-100 dark:border-blue-800">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+            </span>
+            Coming Soon
           </div>
         </motion.div>
       </section>
 
       {/* ── FOOTER ── */}
-      <footer className="border-t border-gray-200 py-12 px-6 bg-white mt-auto">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 flex items-center justify-center">
-              <img src="/logo.svg" alt="ZerithDB Logo" className="w-full h-full" />
-            </div>
-            <span className="font-semibold text-gray-900 text-lg">ZerithDB</span>
-          </Link>
-
-          <div className="flex items-center gap-6 text-sm text-gray-500 font-medium">
-            <Link href="/docs" className="hover:text-gray-900 transition-colors">
-              Documentation
-            </Link>
-            <a
-              href="https://github.com/Zerith-Labs/ZerithDB"
-              className="hover:text-gray-900 transition-colors"
-            >
-              GitHub
-            </a>
-            <Link href="/blog" className="hover:text-gray-900 transition-colors">
-              Blog
-            </Link>
-            <Link href="/pricing" className="hover:text-gray-900 transition-colors">
-              Pricing
-            </Link>
-            <a href="#" className="hover:text-gray-900 transition-colors">
-              Discord
-            </a>
-          </div>
-
-          <div className="text-sm text-gray-400">
-            © {new Date().getFullYear()} ZerithDB. Open Source.
-          </div>
+      <footer className="py-12 border-t border-border">
+        <div className="container mx-auto px-6 text-center text-sm text-muted-foreground">
+          © {new Date().getFullYear()} Zerith Labs. All rights reserved.
         </div>
       </footer>
     </main>

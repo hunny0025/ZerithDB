@@ -10,3 +10,4 @@ export type {
   DropboxBackupTargetOptions,
   LocalCloudBackupOptions,
 } from "./backup.js";
+export { GraphClient, GraphTraversal } from "./graph-client.js";

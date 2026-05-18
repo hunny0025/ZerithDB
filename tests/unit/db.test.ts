@@ -23,16 +23,16 @@ describe("DbClient — CollectionClient", () => {
     });
   });
 
-  describe("insert()", () => {
-    it("should return a generated _id", async () => {
+  describe("insert() - Adding single documents", () => {
+    it("should successfully insert a document and automatically return a uniquely generated _id", async () => {
       const col = db.collection<{ text: string }>("todos");
       const result = await col.insert({ text: "hello" });
       expect(result.id).toBeDefined();
       expect(typeof result.id).toBe("string");
-      expect(result.id.length).toBeGreaterThan(0);
+      expect(String(result.id).length).toBeGreaterThan(0);
     });
 
-    it("should persist the document so find() returns it", async () => {
+    it("should securely persist the inserted document in the database so that subsequent find() queries can retrieve it", async () => {
       const col = db.collection<{ text: string }>("todos");
       const { id } = await col.insert({ text: "world" });
       const docs = await col.find({});
@@ -40,8 +40,26 @@ describe("DbClient — CollectionClient", () => {
       expect(docs[0]?._id).toBe(id);
       expect(docs[0]?.text).toBe("world");
     });
+    it("should return empty array when collection has no documents", async () => {
+      const col = db.collection<{ text: string }>("empty");
 
-    it("should add _createdAt and _updatedAt timestamps", async () => {
+      const docs = await col.find({});
+
+      expect(docs).toEqual([]);
+    });
+
+    it("should insert multiple documents correctly", async () => {
+      const col = db.collection<{ text: string }>("todos");
+
+      await col.insert({ text: "one" });
+      await col.insert({ text: "two" });
+
+      const docs = await col.find({});
+
+      expect(docs.length).toBe(2);
+    });
+
+    it("should automatically inject _createdAt and _updatedAt timestamp fields into the newly inserted document", async () => {
       const before = Date.now();
       const col = db.collection<{ x: number }>("items");
       await col.insert({ x: 42 });
@@ -53,8 +71,8 @@ describe("DbClient — CollectionClient", () => {
     });
   });
 
-  describe("insertMany()", () => {
-    it("should insert multiple documents", async () => {
+  describe("insertMany() - Adding multiple documents in bulk", () => {
+    it("should successfully insert an array of multiple documents into the collection in a single operation", async () => {
       const col = db.collection<{ n: number }>("nums");
       const results = await col.insertMany([{ n: 1 }, { n: 2 }, { n: 3 }]);
       expect(results).toHaveLength(3);
@@ -63,60 +81,116 @@ describe("DbClient — CollectionClient", () => {
     });
   });
 
-  describe("find()", () => {
-    it("should return all documents with empty filter", async () => {
+  describe("find() - Querying and retrieving documents", () => {
+    it("should return all documents in the collection when provided with an empty filter object {}", async () => {
       const col = db.collection<{ v: number }>("vals");
       await col.insertMany([{ v: 1 }, { v: 2 }, { v: 3 }]);
       const docs = await col.find({});
       expect(docs).toHaveLength(3);
     });
 
-    it("should filter by exact equality", async () => {
+    it("should correctly filter and return only the documents that strictly match the provided equality conditions", async () => {
       const col = db.collection<{ done: boolean }>("tasks");
       await col.insertMany([{ done: true }, { done: false }, { done: true }]);
       const done = await col.find({ done: true });
       expect(done).toHaveLength(2);
     });
 
-    it("should support $gt operator", async () => {
+    it("should properly support the $gt (greater than) operator for numerical comparisons in queries", async () => {
       const col = db.collection<{ score: number }>("scores");
       await col.insertMany([{ score: 10 }, { score: 50 }, { score: 90 }]);
       const high = await col.find({ score: { $gt: 30 } });
       expect(high).toHaveLength(2);
     });
 
-    it("should support $in operator", async () => {
+    it("should properly support the $in operator to match documents containing any value within a specified array", async () => {
       const col = db.collection<{ status: string }>("items");
       await col.insertMany([{ status: "open" }, { status: "closed" }, { status: "pending" }]);
       const active = await col.find({ status: { $in: ["open", "pending"] } });
       expect(active).toHaveLength(2);
     });
 
-    it("should return empty array when no documents match", async () => {
+    it("should safely return an empty array rather than throwing an error when no documents match the query", async () => {
       const col = db.collection<{ x: number }>("empty");
       await col.insert({ x: 1 });
       const result = await col.find({ x: { $gt: 100 } });
       expect(result).toHaveLength(0);
     });
+
+    it("should support regex matching with native RegExp patterns", async () => {
+      const col = db.collection<{ title: string }>("notes-regex-native");
+      await col.insertMany([
+        { title: "Team meeting notes" },
+        { title: "Shopping list" },
+        { title: "Daily standup" },
+      ]);
+
+      const result = await col.find({ title: { $regex: /meeting/ } });
+      expect(result).toHaveLength(1);
+      expect(result[0]?.title).toBe("Team meeting notes");
+    });
+
+    it("should support case-insensitive regex matching", async () => {
+      const col = db.collection<{ title: string }>("notes-regex-case");
+      await col.insertMany([
+        { title: "MEETING prep" },
+        { title: "meeting recap" },
+        { title: "brainstorm" },
+      ]);
+
+      const result = await col.find({ title: { $regex: /meeting/i } });
+      expect(result).toHaveLength(2);
+    });
+
+    it("should support string-based regex patterns with flags", async () => {
+      const col = db.collection<{ title: string }>("notes-regex-flags");
+      await col.insertMany([
+        { title: "MEETING agenda" },
+        { title: "meeting recap" },
+        { title: "roadmap" },
+      ]);
+
+      const result = await col.find({ title: { $regex: "meeting", $flags: "i" } });
+      expect(result).toHaveLength(2);
+    });
+
+    it("should return no matches when regex pattern does not match", async () => {
+      const col = db.collection<{ title: string }>("notes-regex-nomatch");
+      await col.insertMany([{ title: "Groceries" }, { title: "Workout" }]);
+
+      const result = await col.find({ title: { $regex: /meeting/ } });
+      expect(result).toHaveLength(0);
+    });
+
+    it("should handle invalid regex inputs gracefully without throwing", async () => {
+      const col = db.collection<{ title: string }>("notes-regex-invalid");
+      await col.insertMany([{ title: "meeting notes" }, { title: "other" }]);
+
+      const invalidPattern = await col.find({ title: { $regex: "(" } });
+      expect(invalidPattern).toHaveLength(0);
+
+      const invalidFlags = await col.find({ title: { $regex: "meeting", $flags: "z" } });
+      expect(invalidFlags).toHaveLength(0);
+    });
   });
 
-  describe("findById()", () => {
-    it("should return the document with matching _id", async () => {
+  describe("findById() - Fetching a specific document by its ID", () => {
+    it("should correctly find and return the exact single document that matches the provided unique _id", async () => {
       const col = db.collection<{ name: string }>("people");
       const { id } = await col.insert({ name: "Alice" });
       const doc = await col.findById(id);
       expect(doc?.name).toBe("Alice");
     });
 
-    it("should return undefined for unknown _id", async () => {
+    it("should safely return undefined when attempting to find a document with an _id that does not exist", async () => {
       const col = db.collection<{ name: string }>("people");
       const doc = await col.findById("nonexistent-id");
       expect(doc).toBeUndefined();
     });
   });
 
-  describe("update()", () => {
-    it("should update matching documents", async () => {
+  describe("update() - Modifying existing documents", () => {
+    it("should successfully modify all documents that match the query filter using the provided update operations", async () => {
       const col = db.collection<{ done: boolean; text: string }>("todos");
       await col.insert({ text: "fix bug", done: false });
       const count = await col.update({ done: false }, { $set: { done: true } });
@@ -125,7 +199,7 @@ describe("DbClient — CollectionClient", () => {
       expect(docs).toHaveLength(1);
     });
 
-    it("should update _updatedAt on update", async () => {
+    it("should automatically refresh the _updatedAt timestamp whenever a document is successfully updated", async () => {
       const col = db.collection<{ v: number }>("vals");
       const { id } = await col.insert({ v: 1 });
       const before = (await col.findById(id))?._updatedAt ?? 0;
@@ -149,8 +223,8 @@ describe("DbClient — CollectionClient", () => {
     });
   });
 
-  describe("delete()", () => {
-    it("should remove matching documents", async () => {
+  describe("delete() - Removing documents based on a query", () => {
+    it("should successfully delete all documents from the collection that match the specified filter criteria", async () => {
       const col = db.collection<{ done: boolean }>("tasks");
       await col.insertMany([{ done: true }, { done: false }]);
       const count = await col.delete({ done: true });
@@ -160,8 +234,8 @@ describe("DbClient — CollectionClient", () => {
     });
   });
 
-  describe("clearAll()", () => {
-    it("should remove every document in the collection", async () => {
+  describe("clearAll() - Wiping collection data completely", () => {
+    it("should completely remove every single document within the target collection, leaving it empty", async () => {
       const col = db.collection<{ done: boolean }>("tasks");
       await col.insertMany([{ done: true }, { done: false }, { done: true }]);
 
@@ -171,7 +245,7 @@ describe("DbClient — CollectionClient", () => {
       expect(await col.count()).toBe(0);
     });
 
-    it("should not clear other collections", async () => {
+    it("should only affect the target collection and must not accidentally delete data from other unrelated collections", async () => {
       const tasks = db.collection<{ done: boolean }>("tasks");
       await tasks.insertMany([{ done: true }, { done: false }]);
 
@@ -190,8 +264,8 @@ describe("DbClient — CollectionClient", () => {
     });
   });
 
-  describe("count()", () => {
-    it("should return correct document count", async () => {
+  describe("count() - Counting the number of documents", () => {
+    it("should accurately return the total number of documents that match the given filter criteria", async () => {
       const col = db.collection<{ x: number }>("counts");
       await col.insertMany([{ x: 1 }, { x: 2 }, { x: 3 }]);
       expect(await col.count()).toBe(3);

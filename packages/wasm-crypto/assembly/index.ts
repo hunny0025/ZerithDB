@@ -58,7 +58,7 @@ export function freeAll(): void {
 
 export function splitSecret(secretPtr: usize, secretLen: i32, threshold: i32, total: i32): usize {
   initGF();
-  
+
   let secret = new Uint8Array(secretLen);
   for (let i = 0; i < secretLen; i++) {
     secret[i] = load<u8>(secretPtr + i);
@@ -77,9 +77,9 @@ export function splitSecret(secretPtr: usize, secretLen: i32, threshold: i32, to
     for (let i = 0; i < total; i++) {
       let x = u8(i + 1);
       let y = polyEval(coeff, x);
-      
+
       // Store in output format: [x, y0, y1, ...] per shard
-      let shardOffset = outPtr + (i * shardLen);
+      let shardOffset = outPtr + i * shardLen;
       if (s === 0) {
         store<u8>(shardOffset, x);
       }
@@ -99,7 +99,7 @@ export function recoverSecret(shardsPtr: usize, shardsCount: i32, secretLen: i32
   // Read x coordinates
   let xs = new Uint8Array(shardsCount);
   for (let i = 0; i < shardsCount; i++) {
-    xs[i] = load<u8>(shardsPtr + (i * shardLen));
+    xs[i] = load<u8>(shardsPtr + i * shardLen);
   }
 
   for (let s = 0; s < secretLen; s++) {
@@ -107,8 +107,8 @@ export function recoverSecret(shardsPtr: usize, shardsCount: i32, secretLen: i32
 
     for (let i = 0; i < shardsCount; i++) {
       let xi = xs[i];
-      let yi = load<u8>(shardsPtr + (i * shardLen) + 1 + s);
-      
+      let yi = load<u8>(shardsPtr + i * shardLen + 1 + s);
+
       let num: u8 = 1;
       let den: u8 = 1;
 

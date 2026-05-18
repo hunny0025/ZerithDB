@@ -1,5 +1,18 @@
 {
   "extends": "../../packages/tsconfig/base.json",
-  "compilerOptions": { "outDir": "dist", "rootDir": "src" },
-  "include": ["src/**/*"]
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "paths": {
+      "zerithdb-auth": ["../auth/dist/index.d.ts"],
+      "zerithdb-core": ["../core/dist/index.d.ts"],
+      "zerithdb-db": ["../db/dist/index.d.ts"],
+      "zerithdb-sync": ["../sync/dist/index.d.ts"],
+      "zerithdb-network": ["../network/dist/index.d.ts"],
+      "zerithdb-devtools": ["../devtools/dist/index.d.ts"]
+    }
+  },
+  "include": ["src/**/*.ts"]
 }

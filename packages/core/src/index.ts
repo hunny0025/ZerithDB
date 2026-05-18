@@ -1,9 +1,12 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // zerithdb-core — Public API
 // ─────────────────────────────────────────────────────────────────────────────
-
 export { EventEmitter } from "./internal/event-emitter.js";
-export { ZerithDBError, ErrorCode } from "zerithdb-errors";
+export {
+  ZerithDBError,
+  ZerithValidationError,
+  ErrorCode,
+} from "./errors.js";
 export { Logger } from "./internal/logger.js";
 export type {
   ZerithDBConfig,
@@ -11,12 +14,15 @@ export type {
   AuthConfig,
   NetworkConfig,
   DebugConfig,
+  ConflictResolverConfig,
 } from "./types/config.js";
 export type {
   Document,
   DocumentId,
   CollectionName,
+  CollectionOptions,
   QueryFilter,
+  QueryOptions,
   UpdateSpec,
   InsertResult,
   FindResult,

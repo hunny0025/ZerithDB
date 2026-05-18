@@ -9,9 +9,9 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     }
   },
   "scripts": {
@@ -25,7 +25,8 @@
   "dependencies": {
     "dexie": "^4.0.8",
     "uuid": "^10.0.0",
-    "zerithdb-core": "workspace:*"
+    "zerithdb-core": "workspace:*",
+    "zerithdb-auth": "workspace:*"
   },
   "devDependencies": {
     "@types/uuid": "^10.0.0",
@@ -38,14 +39,14 @@
     "zerithdb-eslint-config": "workspace:*",
     "zerithdb-tsconfig": "workspace:*"
   },
-"peerDependencies": {
-  "zod": "^3.x"
-},
-"peerDependenciesMeta": {
-  "zod": {
-    "optional": true
-  }
-},
+  "peerDependencies": {
+    "zod": "^3.x"
+  },
+  "peerDependenciesMeta": {
+    "zod": {
+      "optional": true
+    }
+  },
   "files": [
     "dist",
     "src"

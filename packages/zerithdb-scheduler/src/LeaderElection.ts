@@ -12,6 +12,7 @@ export class LeaderElection extends EventEmitter<SchedulerEvents> {
   private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
   private timeoutTimer: ReturnType<typeof setTimeout> | null = null;
   private term = 0;
+  private electedAt = 0;
 
   constructor(
     private readonly localPeerId: PeerId,
@@ -47,7 +48,7 @@ export class LeaderElection extends EventEmitter<SchedulerEvents> {
     if (!this.currentLeader) return null;
     return {
       leaderId: this.currentLeader,
-      electedAt: Date.now(),
+      electedAt: this.electedAt,
       term: this.term,
     };
   }
@@ -68,6 +69,7 @@ export class LeaderElection extends EventEmitter<SchedulerEvents> {
 
     this.currentLeader = newLeader;
     this.term++;
+    this.electedAt = Date.now();
 
     if (newLeader === this.localPeerId) {
       this.startHeartbeat();

@@ -2,10 +2,7 @@ const APP_SHELL_CACHE = "zerithdb-app-shell-v2";
 const RUNTIME_CACHE = "zerithdb-runtime-v2";
 const RUNTIME_CACHE_LIMIT = 40;
 
-const REQUIRED_APP_SHELL_URLS = [
-  "/",
-  "/offline.html",
-];
+const REQUIRED_APP_SHELL_URLS = ["/", "/offline.html"];
 
 const OPTIONAL_APP_SHELL_URLS = [
   "/docs",
@@ -18,7 +15,8 @@ const OPTIONAL_APP_SHELL_URLS = [
 
 const CACHED_NAVIGATION_PATHS = new Set(["/", "/docs", "/playground", "/blog"]);
 
-const STATIC_ASSET_PATTERN = /^\/(?:_next\/static|.*\.(?:css|js|mjs|png|jpg|jpeg|svg|webp|ico|woff2?))$/i;
+const STATIC_ASSET_PATTERN =
+  /^\/(?:_next\/static|.*\.(?:css|js|mjs|png|jpg|jpeg|svg|webp|ico|woff2?))$/i;
 
 const FALLBACK_HTML = `<!doctype html>
 <html lang="en">
@@ -38,12 +36,10 @@ const FALLBACK_HTML = `<!doctype html>
 async function cacheAppShell() {
   const cache = await caches.open(APP_SHELL_CACHE);
 
-  await cache.addAll(
-    REQUIRED_APP_SHELL_URLS.map((url) => new Request(url, { cache: "reload" })),
-  );
+  await cache.addAll(REQUIRED_APP_SHELL_URLS.map((url) => new Request(url, { cache: "reload" })));
 
   await Promise.allSettled(
-    OPTIONAL_APP_SHELL_URLS.map((url) => cache.add(new Request(url, { cache: "reload" }))),
+    OPTIONAL_APP_SHELL_URLS.map((url) => cache.add(new Request(url, { cache: "reload" })))
   );
 }
 
@@ -54,7 +50,7 @@ async function deleteOldCaches() {
   await Promise.all(
     cacheNames
       .filter((cacheName) => !expectedCaches.has(cacheName))
-      .map((cacheName) => caches.delete(cacheName)),
+      .map((cacheName) => caches.delete(cacheName))
   );
 }
 

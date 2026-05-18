@@ -47,7 +47,8 @@ const CodeEditor: React.FC<EditorProps> = ({ code, onChange }) => {
           });
 
           // Add ZerithDB types to JS environment too
-          monaco.languages.typescript.javascriptDefaults.addExtraLib(`
+          monaco.languages.typescript.javascriptDefaults.addExtraLib(
+            `
             declare interface ZerithDBApp {
               db(collection: string): {
                 insert(data: any | any[]): Promise<string | string[]>;
@@ -79,7 +80,9 @@ const CodeEditor: React.FC<EditorProps> = ({ code, onChange }) => {
               auth?: { storageKey?: string };
               network?: { autoReconnect?: boolean; reconnectDelay?: number };
             }): ZerithDBApp;
-          `, 'zerithdb.d.ts');
+          `,
+            "zerithdb.d.ts"
+          );
         }}
         options={{
           minimap: { enabled: false },

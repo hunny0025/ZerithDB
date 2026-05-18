@@ -45,6 +45,7 @@ export class TaskRunner {
 
   private async runTask(task: ScheduledTask): Promise<void> {
     try {
+      await task.handler();
       this.onTaskComplete(task.id);
     } catch (err) {
       this.onTaskFailed(task.id, err instanceof Error ? err : new Error(String(err)));

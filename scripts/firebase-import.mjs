@@ -141,9 +141,7 @@ function isCollection(value) {
   }
   const entries = Object.values(value);
   if (entries.length === 0) return false;
-  return entries.every(
-    (v) => v !== null && typeof v === "object" && !Array.isArray(v)
-  );
+  return entries.every((v) => v !== null && typeof v === "object" && !Array.isArray(v));
 }
 
 /**

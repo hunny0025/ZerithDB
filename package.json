@@ -15,7 +15,8 @@
   },
   "scripts": {
     "build": "turbo run build",
-    "dev": "turbo run dev --concurrency=20",
+    "dev": "npm run dev --workspace web",
+    "dev:all": "turbo run dev",
     "test": "turbo run test",
     "test:e2e": "turbo run test:e2e",
     "lint": "turbo run lint",
@@ -25,9 +26,10 @@
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build --filter=!./apps/* && changeset publish",
-    "prepare": "husky",
+    "prepare": "husky && node scripts/setup-git-config.js",
     "build:audit": "pnpm --filter zerithdb-audit build",
-    "benchmark": "tsx scripts/benchmark.ts"
+    "benchmark": "tsx scripts/benchmark.ts",
+    "query-benchmark": "tsx scripts/query-benchmark.ts"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.7",
@@ -45,7 +47,8 @@
     "tsx": "^4.21.0",
     "turbo": "^2.3.0",
     "typescript": "^5.5.4",
-    "vitest": "^4.1.6"
+    "vitest": "^4.1.6",
+    "yjs": "^13.6.30"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

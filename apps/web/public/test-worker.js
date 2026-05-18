@@ -2,36 +2,36 @@
 self.onconnect = (event) => {
   const [port] = event.ports;
   if (port === void 0) return;
-  
+
   port.start();
-  
+
   port.onmessage = (messageEvent) => {
     const message = messageEvent.data;
-    console.log('[Worker] Received:', message.kind);
-    
+    console.log("[Worker] Received:", message.kind);
+
     try {
-      if (message.kind === 'init') {
+      if (message.kind === "init") {
         // Simple init response
         port.postMessage({
           kind: "response",
           id: "init",
           ok: true,
-          value: null
+          value: null,
         });
-      } else if (message.kind === 'echo') {
+      } else if (message.kind === "echo") {
         // Echo back the message
         port.postMessage({
           kind: "response",
           id: message.id,
           ok: true,
-          value: message.data
+          value: message.data,
         });
       } else {
         port.postMessage({
           kind: "response",
           id: message.id,
           ok: false,
-          error: { message: "Unknown message kind" }
+          error: { message: "Unknown message kind" },
         });
       }
     } catch (error) {
@@ -39,7 +39,7 @@ self.onconnect = (event) => {
         kind: "response",
         id: message.id,
         ok: false,
-        error: { message: error.message }
+        error: { message: error.message },
       });
     }
   };

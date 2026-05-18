@@ -33,7 +33,9 @@ export function createDatadogPlugin(opts: DatadogPluginOptions) {
 
     /** Serialize queue to NDJSON for DD HTTP API */
     toNDJSON() {
-      return this.flush().map((p) => JSON.stringify(p)).join("\n");
+      return this.flush()
+        .map((p) => JSON.stringify(p))
+        .join("\n");
     },
   };
 }

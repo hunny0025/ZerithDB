@@ -1,12 +1,11 @@
 import { createApp } from "zerithdb-sdk";
-import type { Document, Identity, SyncState, ZerithDBConfig } from "zerithdb-sdk";
+import type { Document, SyncState } from "zerithdb-sdk";
 import type {
   ClientToWorkerMessage,
   DisposeMessage,
   InitMessage,
   RequestMessage,
   SubscribeMessage,
-  UnsubscribeMessage,
   WorkerToClientMessage,
 } from "./shared-worker-protocol.js";
 import { serializeError } from "./shared-worker-protocol.js";
@@ -34,9 +33,15 @@ self.onconnect = (event: MessageEvent) => {
     try {
       await handleMessage(port, messageEvent.data);
     } catch (error) {
-      const response = messageEvent.data.kind === "request" || messageEvent.data.kind === "dispose"
-        ? ({ kind: "response", id: messageEvent.data.id, ok: false, error: serializeError(error) } as const)
-        : null;
+      const response =
+        messageEvent.data.kind === "request" || messageEvent.data.kind === "dispose"
+          ? ({
+              kind: "response",
+              id: messageEvent.data.id,
+              ok: false,
+              error: serializeError(error),
+            } as const)
+          : null;
       if (response !== null) {
         port.postMessage(response satisfies WorkerToClientMessage);
       }
@@ -64,7 +69,12 @@ async function handleMessage(port: MessagePort, message: ClientToWorkerMessage):
     case "request": {
       const context = ensureContextForApp(message.appId);
       const value = await handleRequest(context, message);
-      port.postMessage({ kind: "response", id: message.id, ok: true, value } satisfies WorkerToClientMessage);
+      port.postMessage({
+        kind: "response",
+        id: message.id,
+        ok: true,
+        value,
+      } satisfies WorkerToClientMessage);
       return;
     }
     case "subscribe": {
@@ -133,13 +143,25 @@ async function handleRequest(context: AppContext, message: RequestMessage): Prom
     }
 
     const collection = context.app.db(message.collectionName);
-    return await invoke(collection as unknown as Record<string, unknown>, message.method, message.args);
+    return await invoke(
+      collection as unknown as Record<string, unknown>,
+      message.method,
+      message.args
+    );
   }
 
-  return await invoke((context.app as unknown as Record<string, unknown>)[message.scope] as Record<string, unknown>, message.method, message.args);
+  return await invoke(
+    (context.app as unknown as Record<string, unknown>)[message.scope] as Record<string, unknown>,
+    message.method,
+    message.args
+  );
 }
 
-async function handleSubscribe(port: MessagePort, context: AppContext, message: SubscribeMessage): Promise<void> {
+async function handleSubscribe(
+  port: MessagePort,
+  context: AppContext,
+  message: SubscribeMessage
+): Promise<void> {
   const collection = context.app.db(message.collectionName);
   const subscriptionId = message.id;
   const callback = (documents: Document<Record<string, unknown>>[]) => {
@@ -166,7 +188,12 @@ async function handleDispose(port: MessagePort, message: DisposeMessage): Promis
   const appId = message.appId;
   const context = contexts.get(appId);
   if (!context) {
-    port.postMessage({ kind: "response", id: message.id, ok: true, value: null } satisfies WorkerToClientMessage);
+    port.postMessage({
+      kind: "response",
+      id: message.id,
+      ok: true,
+      value: null,
+    } satisfies WorkerToClientMessage);
     return;
   }
 
@@ -178,7 +205,12 @@ async function handleDispose(port: MessagePort, message: DisposeMessage): Promis
     contexts.delete(appId);
   }
 
-  port.postMessage({ kind: "response", id: message.id, ok: true, value: null } satisfies WorkerToClientMessage);
+  port.postMessage({
+    kind: "response",
+    id: message.id,
+    ok: true,
+    value: null,
+  } satisfies WorkerToClientMessage);
 }
 
 function cleanupPortSubscriptions(port: MessagePort, context: AppContext): void {
@@ -217,7 +249,11 @@ function broadcastNetworkState(appId: string): void {
   } satisfies WorkerToClientMessage);
 }
 
-async function invoke(target: Record<string, unknown>, method: string, args: unknown[]): Promise<unknown> {
+async function invoke(
+  target: Record<string, unknown>,
+  method: string,
+  args: unknown[]
+): Promise<unknown> {
   const handler = target[method];
   if (typeof handler !== "function") {
     throw new Error(`Unsupported method: ${method}`);

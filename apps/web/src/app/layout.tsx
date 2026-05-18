@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { ClientLayout } from "./client-layout";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme/theme-provider";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import ToasterProvider from "@/components/ToasterProvider";
 
 const inter = Inter({
@@ -25,9 +27,9 @@ export default function RootLayout({
     <html lang="en" className={inter.variable} suppressHydrationWarning>
       <body className="bg-background text-foreground font-sans antialiased transition-colors duration-300 selection:bg-accent/20 selection:text-accent">
         <ThemeProvider>
+          <ThemeToggle />
           {children}
-          <ToasterProvider />
-        </ThemeProvider>
+        </ClientLayout>
       </body>
     </html>
   );

@@ -23,7 +23,8 @@ export async function wrapIDBOperation<T>(
   try {
     return await fn();
   } catch (err) {
-    const error = new ZerithDBError(code, message, { cause: err });
+    // Pass the original error directly as the cause
+    const error = new ZerithDBError(code, message, err);  // ✅ fixed: removed { cause: ... }
 
     // Append the caller's stack so DevTools shows where in user code
     // this operation was triggered — not just Dexie/IDB internals

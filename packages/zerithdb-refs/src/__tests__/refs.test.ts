@@ -1,6 +1,12 @@
 ﻿import { describe, it, expect, vi, beforeEach } from "vitest";
 import { ref, isRef, isHydrated, extractRefs } from "../ref";
-import { hydrateRef, hydrateDocument, registerP2PFetcher, clearHydrationCache, type CollectionAdapter } from "../hydrate";
+import {
+  hydrateRef,
+  hydrateDocument,
+  registerP2PFetcher,
+  clearHydrationCache,
+  type CollectionAdapter,
+} from "../hydrate";
 import { subscribeToRefs, watchRef, emitDocChange, listenerCount } from "../reactive";
 
 const mockDB: Record<string, Record<string, Record<string, unknown>>> = {
@@ -24,15 +30,31 @@ describe("ref()", () => {
     expect(r.collection).toBe("users");
     expect(r.id).toBe("user-123");
   });
-  it("throws if collection is empty", () => { expect(() => ref("", "user-123")).toThrow(); });
-  it("throws if id is empty", () => { expect(() => ref("users", "")).toThrow(); });
+  it("throws if collection is empty", () => {
+    expect(() => ref("", "user-123")).toThrow();
+  });
+  it("throws if id is empty", () => {
+    expect(() => ref("users", "")).toThrow();
+  });
 });
 
 describe("isRef() / isHydrated()", () => {
-  it("isRef() returns true for a raw ref", () => { expect(isRef(ref("users", "user-123"))).toBe(true); });
-  it("isRef() returns false for plain object", () => { expect(isRef({ name: "Alice" })).toBe(false); });
+  it("isRef() returns true for a raw ref", () => {
+    expect(isRef(ref("users", "user-123"))).toBe(true);
+  });
+  it("isRef() returns false for plain object", () => {
+    expect(isRef({ name: "Alice" })).toBe(false);
+  });
   it("isHydrated() returns true for hydrated ref", () => {
-    const h = { __ref: true, __hydrated: true, collection: "users", id: "x", createdAt: "", data: {}, fromCache: true };
+    const h = {
+      __ref: true,
+      __hydrated: true,
+      collection: "users",
+      id: "x",
+      createdAt: "",
+      data: {},
+      fromCache: true,
+    };
     expect(isHydrated(h)).toBe(true);
   });
 });
@@ -69,7 +91,10 @@ describe("hydrateRef()", () => {
 describe("hydrateDocument()", () => {
   beforeEach(() => clearHydrationCache());
   it("hydrates all refs in a document", async () => {
-    const result = await hydrateDocument({ title: "Hello", author: ref("users", "user-123") }, adapter);
+    const result = await hydrateDocument(
+      { title: "Hello", author: ref("users", "user-123") },
+      adapter
+    );
     expect(isHydrated(result.author)).toBe(true);
     expect((result.author as any).data.name).toBe("Alice");
   });

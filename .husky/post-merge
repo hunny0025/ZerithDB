@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+# .husky/post-merge
+# Runs after every `git merge` (including PR checkouts) and after every
+# `git pull`. If pnpm-lock.yaml was touched by the merge, re-run `pnpm install`
+# so the node_modules and lockfile are always consistent.
+
+changed_in_merge() {
+  git diff-tree --no-commit-id -r --name-only HEAD | grep -q "pnpm-lock.yaml"
+}
+
+if changed_in_merge; then
+  echo "⚙️  pnpm-lock.yaml changed — running pnpm install..."
+  pnpm install
+fi

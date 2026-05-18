@@ -9,6 +9,17 @@ import type {
   Document,
 } from "zerithdb-sdk";
 
+export type {
+  Identity,
+  InsertResult,
+  PeerInfo,
+  QueryFilter,
+  SyncState,
+  UpdateSpec,
+  ZerithDBConfig,
+  Document,
+};
+
 export interface SerializedError {
   name: string;
   message: string;

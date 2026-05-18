@@ -1,0 +1,138 @@
+/* ── Reset ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #f5f5f5;
+  color: #1a1a1a;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Shell ───────────────────────────────────────────────── */
+.app-shell {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  height: 100vh;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────── */
+.sidebar {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px 12px;
+  overflow-y: auto;
+}
+
+.btn-new {
+  background: #313244;
+  color: #cdd6f4;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+.btn-new:hover { background: #45475a; }
+
+/* ── Note list ───────────────────────────────────────────── */
+.note-list { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+
+.note-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+.note-item:hover   { background: #313244; }
+.note-item.active  { background: #45475a; }
+
+.note-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.note-date  { font-size: 11px; color: #6c7086; }
+
+.list-state       { font-size: 13px; padding: 8px 4px; color: #6c7086; }
+.list-state.error { color: #f38ba8; }
+
+/* ── Sync status badge ───────────────────────────────────── */
+.sync-status {
+  font-size: 11px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  background: #313244;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sync-status--offline    { color: #f38ba8; }
+.sync-status--connecting { color: #fab387; }
+.sync-status--syncing    { color: #89b4fa; }
+.sync-status--synced     { color: #a6e3a1; }
+
+/* ── Editor pane ─────────────────────────────────────────── */
+.editor-pane {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  overflow: hidden;
+}
+
+.note-editor {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 24px 32px;
+  gap: 12px;
+}
+
+.editor-title {
+  font-size: 22px;
+  font-weight: 600;
+  border: none;
+  outline: none;
+  color: #1a1a1a;
+  background: transparent;
+}
+
+.editor-body {
+  flex: 1;
+  font-size: 15px;
+  line-height: 1.6;
+  border: none;
+  outline: none;
+  resize: none;
+  color: #333;
+  background: transparent;
+  font-family: inherit;
+}
+
+.editor-actions { display: flex; gap: 8px; }
+
+.btn-save {
+  background: #1e66f5;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 20px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.btn-save:disabled { opacity: 0.6; cursor: default; }
+.btn-save:hover:not(:disabled) { background: #1a56d6; }
+
+.btn-delete {
+  background: transparent;
+  color: #e64553;
+  border: 1px solid #e64553;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.btn-delete:hover { background: #fdf0f0; }

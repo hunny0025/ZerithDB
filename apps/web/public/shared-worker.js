@@ -1,5 +1,5 @@
-import { serializeError } from './chunk-U4PLIMGS.js';
-import { createApp } from 'zerithdb-sdk';
+import { serializeError } from "./chunk-U4PLIMGS.js";
+import { createApp } from "zerithdb-sdk";
 
 var contexts = /* @__PURE__ */ new Map();
 var portToAppId = /* @__PURE__ */ new WeakMap();
@@ -12,7 +12,10 @@ self.onconnect = (event) => {
     try {
       await handleMessage(port, messageEvent.data);
     } catch (error) {
-      const response = messageEvent.data.kind === "request" || messageEvent.data.kind === "dispose" ? { kind: "response", id: messageEvent.data.id, ok: false, error: serializeError(error) } : null;
+      const response =
+        messageEvent.data.kind === "request" || messageEvent.data.kind === "dispose"
+          ? { kind: "response", id: messageEvent.data.id, ok: false, error: serializeError(error) }
+          : null;
       if (response !== null) {
         port.postMessage(response);
       }
@@ -32,7 +35,7 @@ async function handleMessage(port, message) {
         kind: "response",
         id: "init",
         ok: true,
-        value: null
+        value: null,
       });
       return;
     }
@@ -68,14 +71,14 @@ function ensureContext(init) {
   const context = {
     app,
     ports: /* @__PURE__ */ new Set(),
-    subscriptions: /* @__PURE__ */ new Map()
+    subscriptions: /* @__PURE__ */ new Map(),
   };
   app.sync.on("state:change", (state) => {
     broadcastToApp(init.appId, {
       kind: "state",
       appId: init.appId,
       scope: "sync",
-      value: state
+      value: state,
     });
   });
   app.network.on("peer:connected", () => {
@@ -112,7 +115,7 @@ async function handleSubscribe(port, context, message) {
       appId: message.appId,
       collectionName: message.collectionName,
       subscriptionId,
-      documents
+      documents,
     });
   };
   const unsubscribe = collection.subscribe(callback);
@@ -162,8 +165,8 @@ function broadcastNetworkState(appId) {
     scope: "network",
     value: {
       connectedPeerCount: context.app.network.connectedPeerCount,
-      connectedPeers: context.app.network.connectedPeers
-    }
+      connectedPeers: context.app.network.connectedPeers,
+    },
   });
 }
 async function invoke(target, method, args) {

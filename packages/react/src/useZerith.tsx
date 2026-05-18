@@ -1,3 +1,4 @@
+"use client";
 import { useContext } from "react";
 import type { ZerithDBApp } from "zerithdb-sdk";
 import { ZerithContext } from "./context";

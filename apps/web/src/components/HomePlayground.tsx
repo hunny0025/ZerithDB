@@ -15,6 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import { usePlaygroundSync } from "@/hooks/usePlaygroundSync";
+import { MergeReviewCard } from "@/components/MergeReviewCard";
 import {
   DEFAULT_PLAYGROUND_QUERY,
   mergePlaygroundNotes,
@@ -51,27 +52,27 @@ function ClientPanel({
           IndexedDB
         </div>
       </motion.div>
-      <div className="flex-1 overflow-y-auto p-4 bg-gray-50 space-y-2">
+      <div className="flex-1 overflow-y-auto p-4 bg-gray-50 dark:bg-zinc-900 space-y-2 theme-transition">
         {isLoading ? (
           [1, 2].map((item) => (
             <div
               key={item}
-              className="bg-white p-3 rounded-lg border border-gray-100 animate-pulse"
+              className="bg-white dark:bg-zinc-800 p-3 rounded-lg border border-gray-100 dark:border-zinc-700 animate-pulse theme-transition"
             >
-              <motion.div className="h-3 bg-gray-200 rounded w-4/5 mb-2" />
-              <div className="h-2 bg-gray-100 rounded w-1/3" />
+              <motion.div className="h-3 bg-gray-200 dark:bg-zinc-600 rounded w-4/5 mb-2 theme-transition" />
+              <div className="h-2 bg-gray-100 dark:bg-zinc-700 rounded w-1/3 theme-transition" />
             </div>
           ))
         ) : notes.length === 0 ? (
-          <p className="text-center text-gray-400 text-sm mt-10">No documents yet.</p>
+          <p className="text-center text-gray-400 dark:text-gray-500 text-sm mt-10 theme-transition">No documents yet.</p>
         ) : (
           notes.map((note) => (
             <div
               key={note.id}
-              className="bg-white p-3 rounded-lg border border-gray-100 shadow-sm text-sm"
+              className="bg-white dark:bg-zinc-800 p-3 rounded-lg border border-gray-100 dark:border-zinc-700 shadow-sm text-sm theme-transition"
             >
-              <p className="text-gray-800">{note.text}</p>
-              <p className="text-[10px] text-gray-400 mt-1 font-mono uppercase">
+              <p className="text-gray-800 dark:text-gray-100 theme-transition">{note.text}</p>
+              <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 font-mono uppercase theme-transition">
                 {note.id} • {new Date(note.timestamp).toLocaleTimeString()}
               </p>
             </div>
@@ -97,6 +98,9 @@ export default function HomePlayground() {
     isLoading,
     peerStatus,
     lastSyncedAt,
+    mergeReview,
+    approveMergeReview,
+    dismissMergeReview,
     insertOnClientA,
   } = usePlaygroundSync();
 
@@ -136,7 +140,9 @@ export default function HomePlayground() {
       setSyncPulse("B");
       if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
       syncTimeoutRef.current = setTimeout(() => setSyncPulse(null), 700);
-      setOutput(`Inserted on Client A → syncing via CRDT to Client B...\n• ${result.note.text}`);
+      setOutput(
+        `Inserted on Client A → AI merge review will appear if Client B diverges.\n• ${result.note.text}`
+      );
     } else {
       setOutput(
         `Inserted on Client A while offline → queued for sync when connection is restored.\n• ${result.note.text}`
@@ -151,7 +157,7 @@ export default function HomePlayground() {
     >
       <div className="max-w-6xl mx-auto">
         <div className="mb-10 md:text-center max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold uppercase tracking-wider mb-4">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 text-xs font-semibold uppercase tracking-wider mb-4 theme-transition">
             <Zap className="w-3.5 h-3.5" />
             Live on the homepage
           </div>
@@ -218,10 +224,10 @@ export default function HomePlayground() {
               <div
                 className={`flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-full ${
                   peerStatus === "connected"
-                    ? "bg-green-50 text-green-700"
+                    ? "bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300"
                     : peerStatus === "connecting"
-                      ? "bg-yellow-50 text-yellow-700"
-                      : "bg-gray-100 text-gray-500"
+                      ? "bg-yellow-50 dark:bg-yellow-950/40 text-yellow-700 dark:text-yellow-300"
+                      : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-gray-400"
                 }`}
               >
                 <span
@@ -239,7 +245,7 @@ export default function HomePlayground() {
                     ? "Connecting peers..."
                     : "Peers offline"}
               </div>
-              <div className="flex items-center gap-2 text-xs font-medium text-gray-600 bg-white border border-gray-200 px-3 py-1.5 rounded-full">
+              <div className="flex items-center gap-2 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 px-3 py-1.5 rounded-full theme-transition">
                 <ArrowRightLeft className="w-3.5 h-3.5" />
                 Sync ops: {syncCount}
               </div>
@@ -253,8 +259,8 @@ export default function HomePlayground() {
                 onClick={() => setIsOnline(!isOnline)}
                 className={`ml-auto flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
                   isOnline
-                    ? "bg-green-50 text-green-700 border-green-200"
-                    : "bg-red-50 text-red-700 border-red-200"
+                    ? "bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-900"
+                    : "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900"
                 }`}
               >
                 {isOnline ? <Wifi className="w-3.5 h-3.5" /> : <WifiOff className="w-3.5 h-3.5" />}
@@ -277,14 +283,22 @@ export default function HomePlayground() {
               />
             </div>
 
+            {mergeReview && (
+              <MergeReviewCard
+                review={mergeReview}
+                onApprove={approveMergeReview}
+                onDismiss={dismissMergeReview}
+              />
+            )}
+
             <p className="text-sm text-muted-foreground leading-relaxed">
               Edits on Client A propagate to Client B when the network is online. Toggle offline to
-              queue changes, then reconnect to see CRDT merge in action.
+              queue changes, then reconnect to review and approve the AI-suggested merge.
             </p>
 
             <Link
               href="/playground"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 theme-transition"
             >
               Open full playground
               <ArrowRight className="w-4 h-4" />

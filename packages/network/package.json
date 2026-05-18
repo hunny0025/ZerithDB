@@ -9,19 +9,20 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "require": "./dist/index.cjs",
-      "types": "./dist/index.d.ts"
+      "require": "./dist/index.cjs"
     }
   },
   "scripts": {
     "build": "tsup src/index.ts --format esm,cjs --dts",
     "dev": "tsup src/index.ts --format esm,cjs --dts --watch",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run --passWithNoTests",
+    "test": "vitest run --passWithNoTests --config vitest.config.ts",
     "clean": "rimraf dist"
   },
   "dependencies": {
+    "@noble/hashes": "^2.2.0",
     "zerithdb-auth": "workspace:*",
     "zerithdb-core": "workspace:*",
     "simple-peer": "^9.11.1",

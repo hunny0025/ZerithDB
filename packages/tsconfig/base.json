@@ -9,6 +9,10 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "bundler",
-    "downlevelIteration": true
+    "downlevelIteration": true,
+    "paths": {
+      "zerithdb-auth": ["../auth/src/index.ts"],
+      "zerithdb-auth/*": ["../auth/src/*"]
+    }
   }
 }

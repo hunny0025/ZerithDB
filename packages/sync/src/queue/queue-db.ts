@@ -1,4 +1,4 @@
-import Dexie, { type Table } from "dexie";
+import { Dexie, type Table } from "dexie";
 import type { QueuedMutation } from "./types.js";
 
 const QUEUE_DB_PREFIX = "zerithdb_queue_";

@@ -1,11 +1,6 @@
 <template>
   <form class="add-form" @submit.prevent="onSubmit">
-    <input
-      v-model="text"
-      type="text"
-      placeholder="What needs to be done?"
-      autofocus
-    />
+    <input v-model="text" type="text" placeholder="What needs to be done?" autofocus />
     <button type="submit" :disabled="!text.trim()">Add</button>
   </form>
 </template>

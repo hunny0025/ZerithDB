@@ -105,7 +105,7 @@ jobs:
         run: pnpm turbo build
 
       - name: Run unit tests (Vitest)
-        run: pnpm turbo test
+        run: pnpm exec vitest run
 
       - name: Upload coverage report
         if: always()

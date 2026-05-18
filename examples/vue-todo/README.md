@@ -1,19 +1,19 @@
 # Vue Todo — ZerithDB Example
 
-A minimal todo application built with **Vue 3** and **ZerithDB**, demonstrating
-local-first data persistence with IndexedDB.
+A minimal todo application built with **Vue 3** and **ZerithDB**, demonstrating local-first data
+persistence with IndexedDB.
 
 ## Features Demonstrated
 
-| ZerithDB API | Used In | Purpose |
-|-------------|---------|---------|
-| `createApp()` | `src/db.js` | Initialize ZerithDB with an app ID |
-| `app.db("todos")` | `src/db.js` | Get a collection client |
-| `todos.insert()` | `App.vue` | Add a new todo |
-| `todos.find()` | `App.vue` | List all todos |
-| `todos.update()` | `App.vue` | Toggle todo completion |
-| `todos.delete()` | `App.vue` | Remove a single todo |
-| `todos.clearAll()` | `App.vue` | Remove all todos |
+| ZerithDB API       | Used In     | Purpose                            |
+| ------------------ | ----------- | ---------------------------------- |
+| `createApp()`      | `src/db.js` | Initialize ZerithDB with an app ID |
+| `app.db("todos")`  | `src/db.js` | Get a collection client            |
+| `todos.insert()`   | `App.vue`   | Add a new todo                     |
+| `todos.find()`     | `App.vue`   | List all todos                     |
+| `todos.update()`   | `App.vue`   | Toggle todo completion             |
+| `todos.delete()`   | `App.vue`   | Remove a single todo               |
+| `todos.clearAll()` | `App.vue`   | Remove all todos                   |
 
 ## Quick Start
 
@@ -46,7 +46,8 @@ vue-todo/
 
 ## How It Works
 
-1. **`src/db.js`** creates a ZerithDB app instance with `createApp({ appId: "vue-todo-example" })` and exports the `todos` collection client.
+1. **`src/db.js`** creates a ZerithDB app instance with `createApp({ appId: "vue-todo-example" })`
+   and exports the `todos` collection client.
 
 2. **`App.vue`** imports the `todos` collection and performs all CRUD operations:
    - `todos.find()` — loads all documents on mount

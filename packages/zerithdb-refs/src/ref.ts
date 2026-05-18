@@ -11,16 +11,29 @@ export function ref(collection: string, id: string): DocumentRef {
 }
 
 export function isRef(value: unknown): value is DocumentRef {
-  return typeof value === "object" && value !== null &&
-    (value as DocumentRef).__ref === true && !(value as HydratedRef).__hydrated;
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as DocumentRef).__ref === true &&
+    !(value as HydratedRef).__hydrated
+  );
 }
 
-export function isHydrated<T extends Record<string, unknown>>(value: unknown): value is HydratedRef<T> {
-  return typeof value === "object" && value !== null &&
-    (value as HydratedRef).__ref === true && (value as HydratedRef).__hydrated === true;
+export function isHydrated<T extends Record<string, unknown>>(
+  value: unknown
+): value is HydratedRef<T> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    (value as HydratedRef).__ref === true &&
+    (value as HydratedRef).__hydrated === true
+  );
 }
 
-export function extractRefs(doc: Record<string, unknown>, prefix = ""): Array<{ fieldPath: string; ref: DocumentRef }> {
+export function extractRefs(
+  doc: Record<string, unknown>,
+  prefix = ""
+): Array<{ fieldPath: string; ref: DocumentRef }> {
   const results: Array<{ fieldPath: string; ref: DocumentRef }> = [];
   for (const [key, value] of Object.entries(doc)) {
     const path = prefix ? prefix + "." + key : key;

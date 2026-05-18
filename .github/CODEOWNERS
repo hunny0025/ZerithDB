@@ -1,5 +1,27 @@
 # This file determines who is automatically requested for review when a PR is opened.
 # See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
-# Automatically request review from you on ALL files in the repository
-* @arpittkhandelwal
+# Global default owner (fallback)
+*                            @arpittkhandelwal
+
+# Core Directories
+/docs/                       @arpittkhandelwal
+/.github/                    @arpittkhandelwal
+/infra/                      @arpittkhandelwal
+/scripts/                    @arpittkhandelwal
+/tests/                      @arpittkhandelwal
+/apps/web/                   @arpittkhandelwal
+
+# Packages
+/packages/auth/              @arpittkhandelwal
+/packages/cli/               @arpittkhandelwal
+/packages/core/              @arpittkhandelwal
+/packages/db/                @arpittkhandelwal
+/packages/eslint-config/     @arpittkhandelwal
+/packages/network/           @arpittkhandelwal
+/packages/react/             @arpittkhandelwal
+/packages/sdk/               @arpittkhandelwal
+/packages/sync/              @arpittkhandelwal
+/packages/tsconfig/          @arpittkhandelwal
+/packages/utils/             @arpittkhandelwal
+/packages/zerithdb-python/   @arpittkhandelwal

@@ -1,6 +1,15 @@
 packages:
-  - "apps/*"
-  - "packages/*"
-  - "!packages/zerithdb-python"
-  - "infra/*"
-  - "examples/*"
+  - apps/*
+  - packages/*
+  - '!packages/zerithdb-python'
+  - infra/*
+  - examples/*
+
+onlyBuiltDependencies:
+  - browser-tabs-lock
+  - esbuild
+  - leveldown
+  - protobufjs
+  - sharp
+  - svelte-preprocess
+  - unrs-resolver

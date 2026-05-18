@@ -30,9 +30,58 @@ export interface AwarenessState {
   [key: string]: unknown;
 }
 
+/**
+ * A point-in-time snapshot of a single peer's ephemeral state.
+ * Shared over the WebRTC mesh without being persisted to IndexedDB.
+ *
+ * @template TState - The shape of the application-defined ephemeral fields.
+ */
+export interface EphemeralPeerState<
+  TState extends Record<string, unknown> = Record<string, unknown>,
+> {
+  /** Peer ID of the owner */
+  peerId: string;
+  /** The peer's current ephemeral state payload */
+  state: TState;
+  /** Monotonically increasing counter — used to discard out-of-order messages */
+  sequence: number;
+  /** Unix millisecond timestamp of the most recent update */
+  updatedAt: number;
+}
+
+/**
+ * Tuning options for the {@link EphemeralStateManager}.
+ * All fields are optional — sensible defaults are used when omitted.
+ */
+export interface EphemeralConfig {
+  /**
+   * Minimum milliseconds between outbound broadcast messages.
+   * Set to `0` (default) to broadcast immediately on every update.
+   * @default 0
+   */
+  throttleMs?: number;
+
+  /**
+   * Milliseconds of silence before a peer's state is considered stale
+   * and pruned from the local store.
+   * @default 30_000
+   */
+  staleAfterMs?: number;
+
+  /**
+   * How often (in ms) the stale-peer cleanup sweep runs.
+   * @default 5_000
+   */
+  cleanupIntervalMs?: number;
+}
+
 export interface SyncPlugin {
   id: string;
   version: number;
+  /**
+   * Optional semantic conflict resolver for text-heavy collections.
+   */
+  conflictResolver?: ConflictResolver;
   /**
    * Hook to transform/resolve conflicts before applying a remote update
    */

@@ -23,7 +23,7 @@ export const TryShell: React.FC = () => {
   const [activeExample, setActiveExample] = useState(EXAMPLES[0]);
   const [code, setCode] = useState(EXAMPLES[0].code);
 
-  const handleExampleChange = (example: typeof EXAMPLES[0]) => {
+  const handleExampleChange = (example: (typeof EXAMPLES)[0]) => {
     setActiveExample(example);
     setCode(example.code);
   };
@@ -40,7 +40,8 @@ export const TryShell: React.FC = () => {
             Try ZerithDB in <span className="text-blue-600">seconds.</span>
           </h2>
           <p className="mt-3 text-lg text-gray-500 max-w-2xl">
-            Run real queries directly in your browser. No installation, no backend, no configuration required.
+            Run real queries directly in your browser. No installation, no backend, no configuration
+            required.
           </p>
         </div>
 
@@ -84,11 +85,8 @@ export const TryShell: React.FC = () => {
 
         {/* Preview Pane */}
         <div className="lg:col-span-2">
-          <Preview 
-            code={code} 
-            onReset={() => setCode(activeExample.code)} 
-          />
-          
+          <Preview code={code} onReset={() => setCode(activeExample.code)} />
+
           <div className="mt-6 p-6 bg-blue-600 rounded-2xl text-white shadow-xl shadow-blue-200 relative overflow-hidden group">
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
               <Sparkles className="w-24 h-24 rotate-12" />
@@ -97,8 +95,8 @@ export const TryShell: React.FC = () => {
             <p className="text-blue-100 text-sm mb-4 leading-relaxed">
               Install the SDK and get your local-first app running in less than 5 minutes.
             </p>
-            <a 
-              href="/docs" 
+            <a
+              href="/docs"
               className="inline-flex items-center gap-2 bg-white text-blue-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors"
             >
               Get Started <ChevronRight className="w-4 h-4" />

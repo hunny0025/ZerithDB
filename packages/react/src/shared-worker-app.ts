@@ -14,7 +14,7 @@ import type {
   QueryFilter,
   Document,
 } from "./shared-worker-protocol.js";
-import { makeRequestId, serializeError } from "./shared-worker-protocol.js";
+import { makeRequestId } from "./shared-worker-protocol.js";
 import type { ZerithDBApp } from "zerithdb-sdk";
 
 type RequestResolver = {
@@ -22,9 +22,7 @@ type RequestResolver = {
   reject: (error: Error) => void;
 };
 
-type SubscriptionCallback<T extends Record<string, unknown>> = (
-  documents: Document<T>[]
-) => void;
+type SubscriptionCallback<T extends Record<string, unknown>> = (documents: Document<T>[]) => void;
 
 class SharedWorkerBridge {
   private readonly port: MessagePort | null;
@@ -87,6 +85,7 @@ class SharedWorkerBridge {
   }
 
   get sync(): SharedWorkerApp["sync"] {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const bridge = this;
     return {
       enable: () => {
@@ -102,10 +101,12 @@ class SharedWorkerBridge {
   }
 
   get auth(): SharedWorkerApp["auth"] {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const bridge = this;
     return {
       signIn: () => bridge.requestApp("auth", "signIn", []) as Promise<Identity>,
-      generateIdentity: () => bridge.requestApp("auth", "generateIdentity", []) as Promise<Identity>,
+      generateIdentity: () =>
+        bridge.requestApp("auth", "generateIdentity", []) as Promise<Identity>,
       sign: (data: Uint8Array) => bridge.requestApp("auth", "sign", [data]) as Promise<string>,
       verify: (data: Uint8Array, signature: string, publicKey: string) =>
         bridge.requestApp("auth", "verify", [data, signature, publicKey]) as Promise<boolean>,
@@ -119,9 +120,11 @@ class SharedWorkerBridge {
   }
 
   get network(): SharedWorkerApp["network"] {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const bridge = this;
     return {
-      connect: (roomId: string) => bridge.requestApp("network", "connect", [roomId]) as Promise<void>,
+      connect: (roomId: string) =>
+        bridge.requestApp("network", "connect", [roomId]) as Promise<void>,
       broadcast: (message: { type: string; payload: string | Uint8Array }) => {
         void bridge.requestApp("network", "broadcast", [message]);
       },
@@ -159,13 +162,16 @@ class SharedWorkerBridge {
     }
   }
 
-  db<T extends Record<string, unknown> = Record<string, unknown>>(name: string): CollectionProxy<T> {
+  db<T extends Record<string, unknown> = Record<string, unknown>>(
+    name: string
+  ): CollectionProxy<T> {
     if (this.fallbackApp !== null) {
       return this.fallbackApp.db<T>(name) as unknown as CollectionProxy<T>;
     }
 
     return {
-      insert: (document: T) => this.requestCollection(name, "insert", [document]) as Promise<InsertResult>,
+      insert: (document: T) =>
+        this.requestCollection(name, "insert", [document]) as Promise<InsertResult>,
       insertMany: (documents: T[]) =>
         this.requestCollection(name, "insertMany", [documents]) as Promise<InsertResult[]>,
       find: (filter?: QueryFilter<T>) =>
@@ -209,7 +215,11 @@ class SharedWorkerBridge {
     };
   }
 
-  private async requestApp(scope: Exclude<AppScope, "collection">, method: string, args: unknown[]): Promise<unknown> {
+  private async requestApp(
+    scope: Exclude<AppScope, "collection">,
+    method: string,
+    args: unknown[]
+  ): Promise<unknown> {
     if (this.fallbackApp !== null) {
       const app = this.fallbackApp as unknown as Record<string, unknown>;
       const target = app[scope] as Record<string, unknown>;
@@ -217,20 +227,35 @@ class SharedWorkerBridge {
       if (typeof handler !== "function") {
         throw new Error(`Unsupported app method: ${scope}.${method}`);
       }
-      return await Promise.resolve((handler as (...values: unknown[]) => unknown).apply(target, args));
+      return await Promise.resolve(
+        (handler as (...values: unknown[]) => unknown).apply(target, args)
+      );
     }
 
-    return this.request({ kind: "request", id: makeRequestId(), appId: this.appId, scope, method, args });
+    return this.request({
+      kind: "request",
+      id: makeRequestId(),
+      appId: this.appId,
+      scope,
+      method,
+      args,
+    });
   }
 
-  private async requestCollection(collectionName: string, method: string, args: unknown[]): Promise<unknown> {
+  private async requestCollection(
+    collectionName: string,
+    method: string,
+    args: unknown[]
+  ): Promise<unknown> {
     if (this.fallbackApp !== null) {
       const collection = this.fallbackApp.db(collectionName) as unknown as Record<string, unknown>;
       const handler = collection[method];
       if (typeof handler !== "function") {
         throw new Error(`Unsupported collection method: ${method}`);
       }
-      return await Promise.resolve((handler as (...values: unknown[]) => unknown).apply(collection, args));
+      return await Promise.resolve(
+        (handler as (...values: unknown[]) => unknown).apply(collection, args)
+      );
     }
 
     return this.request({
@@ -288,8 +313,12 @@ class SharedWorkerBridge {
       if (message.scope === "sync") {
         this.syncState = message.value as SyncState;
       } else {
-        this.connectedPeers = (message.value as { connectedPeers: ZerithDBApp["network"]["connectedPeers"] }).connectedPeers;
-        this.connectedPeerCount = (message.value as { connectedPeerCount: number }).connectedPeerCount;
+        this.connectedPeers = (
+          message.value as { connectedPeers: ZerithDBApp["network"]["connectedPeers"] }
+        ).connectedPeers;
+        this.connectedPeerCount = (
+          message.value as { connectedPeerCount: number }
+        ).connectedPeerCount;
       }
       return;
     }
@@ -304,7 +333,8 @@ export function createSharedWorkerApp(config: ZerithDBConfig): SharedWorkerApp {
   const bridge = new SharedWorkerBridge(config);
 
   return {
-    db: <T extends Record<string, unknown> = Record<string, unknown>>(name: string) => bridge.db<T>(name),
+    db: <T extends Record<string, unknown> = Record<string, unknown>>(name: string) =>
+      bridge.db<T>(name),
     sync: bridge.sync,
     auth: bridge.auth,
     network: bridge.network,

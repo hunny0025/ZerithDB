@@ -46,7 +46,6 @@
   --color-accent-foreground: #ffffff;
 }
 
-
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -75,5 +74,8 @@
   .text-balance {
     text-wrap: balance;
   }
+}
 
+.theme-transition {
+  @apply transition-colors duration-300;
 }
